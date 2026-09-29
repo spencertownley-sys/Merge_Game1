@@ -15,7 +15,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@dimforge/rapier2d": "^0.21.0",
+    "@dimforge/rapier2d-compat": "^0.21.0",
+    "@tailwindcss/vite": "^4.3.3",
     "idb": "^8.0.3",
     "pixi.js": "^8.21.0",
     "react": "^19.2.8",

@@ -42,7 +42,44 @@ export const PHYSICS = {
 
   /** Soft budget — board area makes this hard to exceed in practice. */
   maxLiveBallsSoft: 80,
+
+  /** Journey `rock` obstacle (§10.3): heavy non-merging ball with a fixed radius. */
+  rockRadiusPx: 30,
+  rockDensity: 4.0,
+
+  /** Two balls count as "in contact" for merge purposes when their surfaces are within
+   *  this many px (§5.1 overlap re-check). Small, so resting neighbours merge reliably
+   *  while balls merely passing nearby do not. */
+  mergeContactEpsilonPx: 1.0,
 } as const;
+
+/** The live-tunable subset of PHYSICS (dev tuning panel, game design doc §2 note). */
+export type PhysicsTuning = {
+  gravity: number;
+  restitutionBallBall: number;
+  restitutionBallWall: number;
+  frictionBallBall: number;
+  frictionBallWall: number;
+  linearDamping: number;
+  angularDamping: number;
+  maxSpeedClamp: number;
+  dropCooldownMs: number;
+};
+
+export const DEFAULT_TUNING: PhysicsTuning = {
+  gravity: PHYSICS.gravity,
+  restitutionBallBall: PHYSICS.restitutionBallBall,
+  restitutionBallWall: PHYSICS.restitutionBallWall,
+  frictionBallBall: PHYSICS.frictionBallBall,
+  frictionBallWall: PHYSICS.frictionBallWall,
+  linearDamping: PHYSICS.linearDamping,
+  angularDamping: PHYSICS.angularDamping,
+  maxSpeedClamp: PHYSICS.maxSpeedClamp,
+  dropCooldownMs: PHYSICS.dropCooldownMs,
+};
+
+/** 100 px = 1 m (§2). */
+export const PX_PER_METER = 100;
 
 // --- Merge & game-over timing (§5, §7) ---
 
