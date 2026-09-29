@@ -37,9 +37,15 @@ export default defineConfig({
         },
       },
     },
-    {
-      name: 'mobile-webkit',
-      use: { ...devices['iPhone 13'] },
-    },
+    // WebKit needs `npx playwright install webkit`; opt in with E2E_WEBKIT=1 (Step 9 asks for
+    // the determinism/E2E pass on both Chromium and WebKit).
+    ...(process.env.E2E_WEBKIT
+      ? [
+          {
+            name: 'mobile-webkit',
+            use: { ...devices['iPhone 13'] },
+          },
+        ]
+      : []),
   ],
 });
