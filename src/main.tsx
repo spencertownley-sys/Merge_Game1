@@ -9,7 +9,17 @@ document.title = BRAND_NAME;
 
 // Installable PWA: the service worker precaches the static build so the game runs fully
 // offline after first load (CLAUDE.md Step 8/10). Updates apply on the next launch.
-registerSW({ immediate: true });
+// Some hosts (sandboxed previews) refuse service workers; the game must still run there.
+try {
+  if ('serviceWorker' in navigator) {
+    registerSW({
+      immediate: true,
+      onRegisterError: (err: unknown) => console.info('Service worker not registered:', err),
+    });
+  }
+} catch (err) {
+  console.info('Service worker registration skipped:', err);
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

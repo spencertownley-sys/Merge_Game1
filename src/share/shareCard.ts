@@ -254,6 +254,8 @@ export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 
 export interface ShareOutcome {
   method: 'share' | 'download';
+  /** The rendered PNG, so the UI can show it in-page where downloads are unavailable. */
+  blob: Blob;
 }
 
 /** Web Share API with a PNG-download fallback (§11). */
@@ -267,9 +269,9 @@ export async function shareCard(input: ShareCardInput): Promise<ShareOutcome> {
   if (nav.share && nav.canShare?.({ files: [file] })) {
     try {
       await nav.share({ files: [file], title: `${BRAND_NAME} — ${input.score} points` });
-      return { method: 'share' };
+      return { method: 'share', blob };
     } catch (err) {
-      if ((err as DOMException)?.name === 'AbortError') return { method: 'share' };
+      if ((err as DOMException)?.name === 'AbortError') return { method: 'share', blob };
       // fall through to download
     }
   }
@@ -282,5 +284,5 @@ export async function shareCard(input: ShareCardInput): Promise<ShareOutcome> {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
-  return { method: 'download' };
+  return { method: 'download', blob };
 }

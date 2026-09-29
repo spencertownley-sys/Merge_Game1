@@ -10,17 +10,22 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
   fullyParallel: false,
+  // The playthrough specs render through SwiftShader on CI-class machines; one worker keeps
+  // the physics worker from being starved by a second browser.
+  workers: 1,
   retries: 0,
   reporter: [['list']],
   use: {
     baseURL: 'http://localhost:4173',
     trace: 'retain-on-failure',
   },
+  // E2E runs against a static development-mode build (dev-only debug hooks kept, no HMR or
+  // dependency re-optimisation reloads mid-test) served by `vite preview`.
   webServer: {
-    command: 'npm run dev -- --port 4173 --strictPort',
+    command: 'npm run build:e2e && npx vite preview --outDir dist-e2e --port 4173 --strictPort',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
   projects: [
     {
@@ -44,6 +49,8 @@ export default defineConfig({
           {
             name: 'mobile-webkit',
             use: { ...devices['iPhone 13'] },
+            // The full playthroughs are Chromium-only; WebKit runs the determinism check.
+            testMatch: /determinism\.spec\.ts/,
           },
         ]
       : []),

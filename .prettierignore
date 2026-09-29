@@ -4,3 +4,5 @@ dev-dist
 test-results
 playwright-report
 package-lock.json
+dist-artifact
+dist-e2e

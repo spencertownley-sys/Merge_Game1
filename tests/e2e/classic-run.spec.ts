@@ -19,21 +19,31 @@ test('a full Classic run reaches the results screen with no console errors', asy
   await expect(page.getByTestId('warming-up')).toBeHidden({ timeout: 30_000 });
 
   const box = (await canvas.boundingBox())!;
-  // One centre column: the all-tier-5 bag consolidates into a tower that overflows in ~1 min.
-  const columns = [0.5];
-  let i = 0;
-  const deadline = Date.now() + 110_000;
+  // One centre column: the all-tier-5 bag consolidates into a tower that overflows within
+  // ~120 accepted drops. Drive drops off the sim's own cooldown gate (canDrop) rather than a
+  // wall-clock cadence so the test stays robust when the CPU-rendered browser runs slowly.
+  const x = box.x + box.width * 0.5;
+  const y = box.y + box.height * 0.5;
+  const deadline = Date.now() + 130_000;
+  let drops = 0;
   while (Date.now() < deadline) {
-    if (await page.getByTestId('results-title').isVisible()) break;
-    const x = box.x + box.width * columns[i % columns.length];
-    const y = box.y + box.height * 0.5;
+    const st = await page.evaluate(() => {
+      const g = window.__smoosh!.game.getState();
+      return { over: g.gameOver, canDrop: g.canDrop };
+    });
+    if (st.over) break;
+    if (!st.canDrop) {
+      await page.waitForTimeout(40);
+      continue;
+    }
     await page.mouse.move(x, y);
     await page.mouse.down();
     await page.mouse.move(x + 2, y);
     await page.mouse.up();
-    i++;
-    await page.waitForTimeout(470);
+    drops++;
+    await page.waitForTimeout(60);
   }
+  expect(drops).toBeGreaterThan(20);
   await expect(page.getByTestId('results-title')).toBeVisible();
   const score = Number(await page.getByTestId('final-score').textContent());
   expect(score).toBeGreaterThan(0);
@@ -44,6 +54,9 @@ test('a full Classic run reaches the results screen with no console errors', asy
   await page.getByTestId('share').click();
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/\.png$/);
+  // The card is also shown in-page (for hosts that block downloads); dismiss it.
+  await expect(page.getByTestId('share-preview')).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).click();
 
   // Play again starts a fresh run.
   await page.getByTestId('results-primary').click();

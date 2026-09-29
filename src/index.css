@@ -3,6 +3,8 @@
 /* Design tokens per UI_UX_NOTES.md §2: warm coral primary, golden accent, soft neutrals. */
 @theme {
   --color-coral: #f25f5c;
+  /* AA-contrast coral for white text on filled buttons (5.0:1 measured by Lighthouse); #f25f5c is 3.2:1. */
+  --color-coral-deep: #c93c39;
   --color-gold: #ffd700;
   --color-cream: #faf7f2;
   --color-ink: #2b2622;
@@ -48,7 +50,7 @@ body {
   @apply inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-6 py-3 font-display text-lg font-semibold transition active:scale-95 focus-visible:ring-4 focus-visible:ring-gold/60 focus-visible:outline-none;
 }
 .btn-primary {
-  @apply btn bg-coral text-white shadow-lg shadow-coral/30 hover:brightness-105;
+  @apply btn bg-coral-deep text-white shadow-lg shadow-coral/30 hover:brightness-105;
 }
 .btn-secondary {
   @apply btn bg-white/80 text-ink shadow-md ring-1 ring-ink/10 hover:bg-white;

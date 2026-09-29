@@ -36,11 +36,26 @@ Steps 1-8 of the `CLAUDE.md` build plan are implemented:
 - **Settings & PWA** — sound/music/haptics-placeholder/reduce-motion/simple-graphics/tier
   numbers, persisted in IndexedDB; installable with an offline service worker.
 
-Not yet done: Step 9's manual device pass and Lighthouse run, Step 10 deployment, and the
-commissioned art. Photo personalization (Phase 1.5) is intentionally not started.
+**Step 9 (QA)** — unit/determinism suite green; the in-browser determinism check
+(`tests/e2e/determinism.spec.ts`) passes on Chromium and WebKit; E2E covers a full Classic
+run, a Journey level completion and share-card generation; Lighthouse (mobile emulation,
+production build, CPU-rendered headless Chromium): performance 0.77-0.82, accessibility 1.0,
+best practices 1.0. Installability is
+verified via the generated manifest + registered service worker (Lighthouse 12 dropped its
+PWA category). Still owed: a hands-on pass on a real mid-range Android phone and iOS Safari.
+
+**Step 10 (deployment)** — the build is host-agnostic (`VITE_BASE` sets the public path).
+`.github/workflows/deploy-pages.yml` publishes `dist` to GitHub Pages on every push to
+`main` once Pages is enabled in the repo settings with "Source: GitHub Actions". For
+Vercel / Cloudflare Pages / Netlify, point the host at `npm run build` with output `dist`
+and leave `VITE_BASE` unset. Verify offline play after the first load once installed.
+
+Not yet done: the commissioned tier and land art. Photo personalization (Phase 1.5) is
+intentionally not started.
 
 Dev-only URL flags (`npm run dev`): `?debug=shader` (shader orientation harness),
-`?debug=fill` (all tier-5 drops, used by the smoke test), `?debug=tuning` (live physics panel).
+`?debug=fill` (all tier-5 drops, used by the smoke test), `?debug=tuning` (live physics panel),
+`?debug=determinism` (in-browser replay check used by the cross-browser E2E).
 
 ## Development
 
@@ -48,7 +63,8 @@ Dev-only URL flags (`npm run dev`): `?debug=shader` (shader orientation harness)
 npm install
 npm run dev          # start the Vite dev server
 npm run test         # run the unit/determinism test suite (Vitest)
-npm run e2e          # Playwright: shader acceptance test, Classic run, Journey level
+npm run e2e          # Playwright (Chromium): shader acceptance, Classic run, Journey level, determinism
+E2E_WEBKIT=1 npm run e2e   # also runs the determinism check on WebKit (npx playwright install webkit)
 npm run lint          # ESLint
 npm run format        # Prettier, writes changes
 npm run build         # type-check + production build

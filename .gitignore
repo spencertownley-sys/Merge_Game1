@@ -31,3 +31,5 @@ playwright-report
 
 # vite-plugin-pwa dev output
 dev-dist
+dist-artifact
+dist-e2e

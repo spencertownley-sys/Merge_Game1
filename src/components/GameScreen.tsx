@@ -22,6 +22,7 @@ import type { SimLevelConfig } from '../engine/types';
 import { shareCard } from '../share/shareCard';
 import { landDef } from '../journey/lands';
 import { DevTuningPanel } from './DevTuningPanel';
+import { ShareCardPreview } from './ShareCardPreview';
 
 export type GameScreenProps =
   | {
@@ -165,6 +166,7 @@ export function GameScreen(props: GameScreenProps) {
   const nextLevel = level ? LEVELS.find((l) => l.id === level.id + 1) : undefined;
   const landRestoredNow = level ? isLandRestored(level.land, journeyProgress) : false;
   const [sharing, setSharing] = useState(false);
+  const [cardBlob, setCardBlob] = useState<Blob | null>(null);
   const onShare = async () => {
     if (sharing) return;
     setSharing(true);
@@ -183,7 +185,7 @@ export function GameScreen(props: GameScreenProps) {
         stars: level ? levelStatus?.stars : undefined,
         url: typeof location !== 'undefined' ? location.host : undefined,
       });
-      if (outcome.method === 'download') toast('Card saved as a PNG.');
+      if (outcome.method === 'download') setCardBlob(outcome.blob);
     } catch (err) {
       console.warn('Share failed', err);
       toast('Could not create the share card.', 'error');
@@ -255,7 +257,7 @@ export function GameScreen(props: GameScreenProps) {
             onReady={() => setStageReady(true)}
           />
         )}
-        {props.mode === 'classic' && props.tuningPanel && import.meta.env.DEV && (
+        {props.mode === 'classic' && props.tuningPanel && (
           <DevTuningPanel onChange={(t) => clientRef.current?.applyTuning(t)} />
         )}
         {!stageReady && (
@@ -277,6 +279,7 @@ export function GameScreen(props: GameScreenProps) {
         />
       )}
       {showSettings && <SettingsPanel overlay onClose={() => setShowSettings(false)} />}
+      {cardBlob && <ShareCardPreview blob={cardBlob} onClose={() => setCardBlob(null)} />}
       {runEnded && savedResult && (
         <ResultsScreen
           mode={mode}

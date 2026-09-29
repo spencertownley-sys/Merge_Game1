@@ -4,8 +4,13 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vitest/config';
 import { BRAND_NAME } from './src/config/brand.ts';
 
+// Deploy-target-agnostic: VITE_BASE sets the public base path ('/' for a root deploy,
+// '/Merge_Game1/' for GitHub Pages, './' for a relative bundle). Default '/'.
+const base = process.env.VITE_BASE ?? '/';
+
 // https://vite.dev/config/
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -21,7 +26,8 @@ export default defineConfig({
         background_color: '#faf7f2',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: base,
+        scope: base,
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },

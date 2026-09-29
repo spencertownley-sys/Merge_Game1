@@ -54,7 +54,16 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'public/**'],
+    ignores: [
+      'dist/**',
+      'dist-artifact/**',
+      'dist-e2e/**',
+      'dev-dist/**',
+      'test-results/**',
+      'playwright-report/**',
+      'node_modules/**',
+      'public/**',
+    ],
   },
   prettierConfig,
 ];
