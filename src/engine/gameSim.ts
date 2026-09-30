@@ -366,8 +366,12 @@ export class GameSim {
     });
   }
 
+  /** Impacts are reported above a low floor; the renderer applies the (tunable) §9.2b
+   *  squash threshold, whose default is IMPACT_SQUASH.impactThresholdMps. */
+  private static readonly IMPACT_EVENT_FLOOR_MPS = Math.min(0.5, IMPACT_SQUASH.impactThresholdMps);
+
   private emitImpact(b: BallRecord, speedMps: number): void {
-    if (speedMps < IMPACT_SQUASH.impactThresholdMps) return;
+    if (speedMps < GameSim.IMPACT_EVENT_FLOOR_MPS) return;
     this.pendingEvents.push({ type: 'impact', id: b.id, speedMps, atMs: this.timeMs });
   }
 

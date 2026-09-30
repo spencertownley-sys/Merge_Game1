@@ -4,12 +4,16 @@ import { levelById } from './journey/levels';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ToastHost } from './components/Toast';
 import { useSettingsHydration } from './hooks/useSettingsHydration';
+import { useTuning } from './store/tuningStore';
 import { useUi } from './store/uiStore';
 
 // Pixi, Rapier and the journey content only load when a run or the map is opened, so the
 // home screen paints from a small React-only chunk (Lighthouse FCP/LCP).
 const GameScreen = lazy(() =>
   import('./components/GameScreen').then((m) => ({ default: m.GameScreen })),
+);
+const AdminScreen = lazy(() =>
+  import('./admin/AdminScreen').then((m) => ({ default: m.AdminScreen })),
 );
 const JourneyMap = lazy(() =>
   import('./journey/JourneyMap').then((m) => ({ default: m.JourneyMap })),
@@ -67,6 +71,8 @@ function Router({ debugSim, tuningPanel }: { debugSim?: SimLevelConfig; tuningPa
     }
     case 'settings':
       return <SettingsPanel onClose={() => navigate(screen.from)} />;
+    case 'admin':
+      return <AdminScreen />;
   }
 }
 
@@ -100,6 +106,16 @@ function DeterminismDebug() {
 
 export default function App() {
   useSettingsHydration();
+  const hydrateTuning = useTuning((s) => s.hydrate);
+  const tuningHydrated = useTuning((s) => s.hydrated);
+  const navigate = useUi((s) => s.navigate);
+  useEffect(() => {
+    void hydrateTuning();
+  }, [hydrateTuning]);
+  // ?admin=1 opens the admin back end directly (it is also reachable from Home).
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('admin') === '1') navigate({ name: 'admin' });
+  }, [navigate]);
   const [debug] = useState(() =>
     DEBUG_HOOKS ? new URLSearchParams(location.search).get('debug') : null,
   );
@@ -108,6 +124,8 @@ export default function App() {
   // ?debug=fill (dev only): all tier-5 drops so a run overflows quickly in smoke tests.
   const debugSim: SimLevelConfig | undefined =
     debug === 'fill' ? { spawnBag: [0, 0, 0, 0, 20] } : undefined;
+  if (!tuningHydrated)
+    return <div className="flex h-full items-center justify-center text-ink-soft">Loading…</div>;
   return (
     <div className="mx-auto h-full w-full max-w-[560px]">
       <Suspense

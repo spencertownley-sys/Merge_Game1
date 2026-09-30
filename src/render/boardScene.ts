@@ -1,14 +1,24 @@
-// The Pixi scene for the 400×600 board: background, danger line, ghost guide, held-ball
-// preview, and one BallView per live ball. Consumes worker snapshots/events and runs every
-// render-only animation (§5.3 pop + coin-flip, §9.2 gaze/settle/spin, §9.2b squash, tier-11
-// halo). Nothing here feeds back into physics.
+// The Pixi scene for the 400×600 board: per-land frame, background, danger line, ghost guide,
+// held-ball preview, and one BallView per live ball. Consumes worker snapshots/events and runs
+// every render-only animation (§5.3 pop + coin-flip, §9.2 gaze/settle/spin, §9.2b squash,
+// tier-11 halo) using the admin-tunable VisualTuning. Nothing here feeds back into physics.
 
-import { Container, FillGradient, Graphics, type Application } from 'pixi.js';
+import {
+  Assets,
+  Container,
+  FillGradient,
+  Graphics,
+  Sprite,
+  Texture,
+  type Application,
+} from 'pixi.js';
 import { PHYSICS } from '../config/physics';
 import { APEX_TIER, tierRadiusPx } from '../config/tiers';
+import { DEFAULT_VISUAL, type ArtStyleId, type VisualTuning } from '../config/tuning';
 import type { BallSnapshot, SimEvent, Snapshot } from '../engine/types';
 import { BallView, type GraphicsQuality } from './ballView';
-import { getCoreTexture } from './coreArt';
+import { artGeneration, coreTextureFor, setArtStyle, setTierArtOverrides } from './artStyles';
+import { FRAME, FRAME_H, FRAME_W, LandFrame } from './frame';
 import {
   ORIENTATION,
   advanceSettle,
@@ -17,6 +27,7 @@ import {
   computeGaze,
   createSettleState,
   displayAngleFor,
+  idleJiggleScales,
   isAtRest,
   popScale,
   squashAmplitude,
@@ -33,6 +44,14 @@ export interface BoardSceneOptions {
   showTierNumbers: boolean;
   land?: LandId;
   restored?: boolean;
+  /** Admin-tunable feel (defaults to the design-doc values). */
+  visual?: VisualTuning;
+  artStyle?: ArtStyleId;
+  tierArt?: Partial<Record<number, string>>;
+  frameArtUrl?: string;
+  backgroundArtUrl?: string;
+  /** Hide the decorative frame (e.g. for the admin preview). */
+  showFrame?: boolean;
 }
 
 interface LiveBall {
@@ -41,11 +60,9 @@ interface LiveBall {
   squashStartMs: number;
   squashAmp: number;
   popStartMs: number;
-  lastX: number;
-  lastY: number;
-  lastAngle: number;
   kind: BallSnapshot['kind'];
   rot: Float32Array;
+  phase: number;
 }
 
 interface DyingBall {
@@ -59,8 +76,10 @@ const BOARD_H = PHYSICS.boardHeightPx;
 export class BoardScene {
   readonly root = new Container();
   private readonly boardLayer = new Container();
+  private readonly frame = new LandFrame();
   private readonly bg = new Graphics();
-  private readonly frame = new Graphics();
+  private readonly bgImageHolder = new Container();
+  private readonly frameEdge = new Graphics();
   private readonly dangerLine = new Graphics();
   private readonly ghost = new Graphics();
   private readonly ballLayer = new Container();
@@ -79,36 +98,63 @@ export class BoardScene {
   private offsetX = 0;
   private offsetY = 0;
   private warning = false;
-
+  private artGen = artGeneration();
+  private bgImageUrl: string | undefined;
+  private pendingPops = new Set<number>();
   private readonly app: Application;
 
   constructor(app: Application, opts: BoardSceneOptions) {
     this.app = app;
     this.opts = { ...opts };
     this.root.addChild(this.boardLayer);
-    this.boardLayer.addChild(
+    this.boardLayer.position.set(FRAME.side, FRAME.top);
+    // The board mask keeps the backdrop image and any overshoot inside the play area.
+    const boardMask = new Graphics().rect(0, 0, BOARD_W, BOARD_H).fill({ color: 0xffffff });
+    const boardContent = new Container();
+    boardContent.mask = boardMask;
+    boardContent.addChild(
       this.bg,
-      this.frame,
+      this.bgImageHolder,
       this.ghost,
       this.ballLayer,
       this.fxLayer,
       this.dangerLine,
     );
-    this.setLand(opts.land ?? DEFAULT_LAND, opts.restored ?? true);
-    this.drawFrame();
+    this.boardLayer.addChild(this.frame.container, boardContent, boardMask, this.frameEdge);
+    setArtStyle(opts.artStyle ?? 'gummy');
+    setTierArtOverrides(opts.tierArt ?? {});
+    this.artGen = artGeneration();
+    this.applyLook();
+    this.drawFrameEdge();
     this.drawDangerLine(false, 1);
     app.stage.addChild(this.root);
   }
 
+  private get visual(): VisualTuning {
+    return this.opts.visual ?? DEFAULT_VISUAL;
+  }
+
+  private get frameVisible(): boolean {
+    return this.opts.showFrame !== false;
+  }
+
   // --- layout -----------------------------------------------------------------------------
 
-  /** Scales the logical board to fit (letterboxed, centred) in the given CSS-pixel area. */
+  /** Scales the logical board (+ frame) to fit, letterboxed and centred, in a CSS-pixel area. */
   resize(width: number, height: number): void {
-    this.scale = Math.min(width / BOARD_W, height / BOARD_H);
-    this.offsetX = (width - BOARD_W * this.scale) / 2;
-    this.offsetY = (height - BOARD_H * this.scale) / 2;
+    const fw = this.frameVisible ? FRAME_W : BOARD_W;
+    const fh = this.frameVisible ? FRAME_H : BOARD_H;
+    this.scale = Math.min(width / fw, height / fh);
+    const left = (width - fw * this.scale) / 2;
+    const top = (height - fh * this.scale) / 2;
     this.root.scale.set(this.scale);
-    this.root.position.set(this.offsetX, this.offsetY);
+    this.root.position.set(left, top);
+    this.boardLayer.position.set(
+      this.frameVisible ? FRAME.side : 0,
+      this.frameVisible ? FRAME.top : 0,
+    );
+    this.offsetX = left + this.boardLayer.position.x * this.scale;
+    this.offsetY = top + this.boardLayer.position.y * this.scale;
   }
 
   /** Converts a CSS-pixel position relative to the canvas into board px. */
@@ -127,7 +173,9 @@ export class BoardScene {
 
   // --- look -------------------------------------------------------------------------------
 
-  setLand(land: LandId, restored: boolean): void {
+  private applyLook(): void {
+    const land = this.opts.land ?? DEFAULT_LAND;
+    const restored = this.opts.restored ?? true;
     const p = LAND_PALETTES[land] ?? LAND_PALETTES[DEFAULT_LAND];
     const sky = restored
       ? { top: p.skyTop, bottom: p.skyBottom }
@@ -145,41 +193,76 @@ export class BoardScene {
       textureSpace: 'local',
     });
     this.bg.rect(0, 0, BOARD_W, BOARD_H).fill(grad);
-    // soft ground band behind the floor
     this.bg.rect(0, BOARD_H * 0.82, BOARD_W, BOARD_H * 0.18).fill({ color: ground, alpha: 0.55 });
+
+    this.frame.container.visible = this.frameVisible;
+    if (this.frameVisible) this.frame.set(land, restored, this.opts.frameArtUrl);
+    this.setBackgroundImage(this.opts.backgroundArtUrl);
+  }
+
+  private setBackgroundImage(url?: string): void {
+    if (url === this.bgImageUrl) return;
+    this.bgImageUrl = url;
+    this.bgImageHolder.removeChildren().forEach((c) => c.destroy());
+    if (!url) return;
+    const wanted = url;
+    Assets.load<Texture>({ src: url, alias: `bg#${url}`, loadParser: 'loadTextures' })
+      .then((tex) => {
+        if (this.bgImageUrl !== wanted) return;
+        const s = new Sprite(tex);
+        s.width = BOARD_W;
+        s.height = BOARD_H;
+        this.bgImageHolder.addChild(s);
+      })
+      .catch((err) =>
+        console.warn('Background art failed to load; using the palette backdrop.', err),
+      );
   }
 
   setOptions(opts: Partial<BoardSceneOptions>): void {
-    const qualityChanged = opts.quality !== undefined && opts.quality !== this.opts.quality;
-    const numbersChanged =
-      opts.showTierNumbers !== undefined && opts.showTierNumbers !== this.opts.showTierNumbers;
-    this.opts = { ...this.opts, ...opts };
-    if (qualityChanged) {
-      for (const [, b] of this.balls) b.view.destroy();
-      this.balls.clear();
-      this.ballLayer.removeChildren();
-      if (this.heldView) {
-        this.heldView.destroy();
-        this.heldView = null;
-      }
-      this.heldTier = 0;
-    } else if (numbersChanged) {
+    const prev = this.opts;
+    this.opts = { ...prev, ...opts };
+    if (opts.artStyle !== undefined) setArtStyle(opts.artStyle);
+    if (opts.tierArt !== undefined) setTierArtOverrides(opts.tierArt);
+    const rebuild =
+      (opts.quality !== undefined && opts.quality !== prev.quality) ||
+      artGeneration() !== this.artGen;
+    if (rebuild) this.rebuildViews();
+    else if (opts.showTierNumbers !== undefined && opts.showTierNumbers !== prev.showTierNumbers) {
       for (const [, b] of this.balls) b.view.setTierNumberVisible(this.opts.showTierNumbers);
       this.heldView?.setTierNumberVisible(this.opts.showTierNumbers);
     }
-    if (opts.land !== undefined || opts.restored !== undefined) {
-      this.setLand(this.opts.land ?? DEFAULT_LAND, this.opts.restored ?? true);
+    if (
+      opts.land !== undefined ||
+      opts.restored !== undefined ||
+      opts.frameArtUrl !== undefined ||
+      opts.backgroundArtUrl !== undefined ||
+      opts.showFrame !== undefined
+    ) {
+      this.applyLook();
+    }
+    if (opts.showFrame !== undefined && opts.showFrame !== prev.showFrame) {
+      const host = this.app.canvas;
+      this.resize(host.clientWidth || host.width, host.clientHeight || host.height);
     }
   }
 
-  private drawFrame(): void {
-    const g = this.frame;
+  /** Throws away every ball view so the next update rebuilds them with the current art. */
+  private rebuildViews(): void {
+    for (const [, b] of this.balls) b.view.destroy();
+    this.balls.clear();
+    for (const d of this.dying) d.view.destroy();
+    this.dying.length = 0;
+    this.heldView?.destroy();
+    this.heldView = null;
+    this.heldTier = 0;
+    this.artGen = artGeneration();
+  }
+
+  private drawFrameEdge(): void {
+    const g = this.frameEdge;
     g.clear();
-    // painted-looking walls: a soft inner shadow line on the three closed sides
-    g.rect(0, 0, BOARD_W, BOARD_H).stroke({ width: 6, color: '#ffffff', alpha: 0.35 });
-    g.moveTo(0, BOARD_H)
-      .lineTo(BOARD_W, BOARD_H)
-      .stroke({ width: 4, color: '#6b5a4a', alpha: 0.25 });
+    g.rect(0, 0, BOARD_W, BOARD_H).stroke({ width: 4, color: '#ffffff', alpha: 0.3 });
   }
 
   private drawDangerLine(warning: boolean, pulse: number): void {
@@ -190,9 +273,8 @@ export class BoardScene {
     const gap = 8;
     const color = warning ? '#e0473f' : '#7a6a80';
     const alpha = warning ? 0.55 + 0.45 * pulse : 0.45;
-    for (let x = 6; x < BOARD_W - 6; x += dash + gap) {
+    for (let x = 6; x < BOARD_W - 6; x += dash + gap)
       g.moveTo(x, y).lineTo(Math.min(x + dash, BOARD_W - 6), y);
-    }
     g.stroke({ width: warning ? 3 : 2, color, alpha, cap: 'round' });
   }
 
@@ -202,7 +284,6 @@ export class BoardScene {
     this.pointer = p;
   }
 
-  /** Where the held ball sits on the rail and whether the ghost guide is shown. */
   setHeld(x: number, ghostVisible: boolean): void {
     this.heldX = x;
     this.ghostVisible = ghostVisible;
@@ -232,24 +313,22 @@ export class BoardScene {
       }
       case 'impact': {
         const b = this.balls.get(e.id);
+        if (e.speedMps < this.visual.impactThresholdMps) break;
         if (b && !this.pendingPops.has(e.id) && this.clockMs - b.popStartMs > ORIENTATION.popMs) {
           // §9.2b: (re)start the envelope; never on the merge pop
           b.squashStartMs = this.clockMs;
-          b.squashAmp = squashAmplitude(e.speedMps);
+          b.squashAmp = squashAmplitude(e.speedMps, this.visual.impactThresholdMps);
         }
         break;
       }
       case 'thaw': {
-        const b = this.balls.get(e.id);
-        b?.view.setFrozen(false);
+        this.balls.get(e.id)?.view.setFrozen(false);
         break;
       }
       default:
         break;
     }
   }
-
-  private pendingPops = new Set<number>();
 
   private spawnMergeBurst(x: number, y: number, tier: number): void {
     if (this.opts.reduceMotion) return;
@@ -278,6 +357,7 @@ export class BoardScene {
   /** Called from the Pixi ticker. dtMs is render time, never physics time. */
   update(dtMs: number): void {
     this.clockMs += dtMs;
+    if (artGeneration() !== this.artGen) this.rebuildViews(); // custom art finished loading / style changed
     const snap = this.snapshot;
     if (!snap) return;
 
@@ -290,37 +370,38 @@ export class BoardScene {
     }
     for (const [id, live] of this.balls) {
       if (!seen.has(id)) {
-        // vanished without a merge event (e.g. apex parents handled above, or a reset)
         live.view.destroy();
         this.balls.delete(id);
       }
     }
 
-    // parents shrinking to zero (§5.3)
     for (let i = this.dying.length - 1; i >= 0; i--) {
       const d = this.dying[i];
       const t = (this.clockMs - d.startMs) / ORIENTATION.parentShrinkMs;
       if (t >= 1) {
         d.view.destroy();
         this.dying.splice(i, 1);
-      } else {
-        d.view.setPop(1 - t);
-      }
+      } else d.view.setPop(1 - t);
     }
 
     this.updateHeld(snap);
     this.updateDanger(snap);
   }
 
-  private createLive(bs: BallSnapshot): LiveBall {
-    const view = new BallView({
-      tier: bs.kind === 'rock' ? 1 : bs.tier,
-      radius: bs.radius,
+  private makeView(tier: number, radius: number, kind?: BallSnapshot['kind']): BallView {
+    return new BallView({
+      tier,
+      radius,
       quality: this.opts.quality,
-      coreTexture: getCoreTexture(bs.kind === 'rock' ? 1 : bs.tier),
+      artStyle: this.opts.artStyle ?? 'gummy',
+      coreTexture: coreTextureFor(tier),
       showTierNumber: this.opts.showTierNumbers,
-      kind: bs.kind,
+      kind,
     });
+  }
+
+  private createLive(bs: BallSnapshot): LiveBall {
+    const view = this.makeView(bs.kind === 'rock' ? 1 : bs.tier, bs.radius, bs.kind);
     this.ballLayer.addChild(view.container);
     const live: LiveBall = {
       view,
@@ -328,11 +409,9 @@ export class BoardScene {
       squashStartMs: -Infinity,
       squashAmp: 0,
       popStartMs: -Infinity,
-      lastX: bs.x,
-      lastY: bs.y,
-      lastAngle: bs.angle,
       kind: bs.kind,
       rot: new Float32Array(9),
+      phase: (bs.id * 0.618) % (Math.PI * 2),
     };
     if (this.pendingPops.has(bs.id)) {
       this.pendingPops.delete(bs.id);
@@ -344,9 +423,7 @@ export class BoardScene {
   }
 
   private updateLive(live: LiveBall, bs: BallSnapshot, dtMs: number): void {
-    live.lastX = bs.x;
-    live.lastY = bs.y;
-    live.lastAngle = bs.angle;
+    const v = this.visual;
     live.view.setTransform(bs.x, bs.y, bs.angle);
     if (bs.kind === 'ice' && live.kind !== 'ice') live.view.setFrozen(true);
     if (bs.kind === 'ball' && live.kind === 'ice') live.view.setFrozen(false);
@@ -356,11 +433,14 @@ export class BoardScene {
     const reduce = this.opts.reduceMotion;
     const atRest = isAtRest(bs.vx, bs.vy, bs.angvel);
     const settle = advanceSettle(live.settle, atRest, dtMs);
-    const displayAngle = displayAngleFor(bs.angle, settle);
+    const displayAngle = displayAngleFor(bs.angle, settle, v.visualSpinScale);
     let yaw = 0;
     let pitch = 0;
     if (!reduce) {
-      const g = computeGaze({ x: bs.x, y: bs.y, pointer: this.pointer, vxPx: bs.vx, vyPx: bs.vy });
+      const g = computeGaze(
+        { x: bs.x, y: bs.y, pointer: this.pointer, vxPx: bs.vx, vyPx: bs.vy },
+        v,
+      );
       yaw = g.yaw;
       pitch = g.pitch;
     }
@@ -374,24 +454,29 @@ export class BoardScene {
       if (reduce) {
         live.view.container.alpha = Math.min(1, sincePop / ORIENTATION.popMs);
         live.view.setPop(1);
-      } else {
-        live.view.setPop(popScale(sincePop));
-      }
+      } else live.view.setPop(popScale(sincePop));
     } else {
       live.view.setPop(1);
       live.view.container.alpha = 1;
     }
 
-    // §9.2b squash
+    // §9.2b squash + admin idle jiggle
+    let sx = 1;
+    let sy = 1;
     const sinceSquash = this.clockMs - live.squashStartMs;
-    if (!reduce && sinceSquash >= 0 && sinceSquash <= 220) {
-      const { scaleX, scaleY } = squashScales(squashEnvelope(sinceSquash, live.squashAmp));
-      live.view.setSquash(scaleX, scaleY);
-    } else {
-      live.view.setSquash(1, 1);
+    if (!reduce && sinceSquash >= 0 && sinceSquash <= v.squashDurationMs) {
+      const env = squashEnvelope(sinceSquash, live.squashAmp, v.squashDurationMs, v.jiggleCycles);
+      const s = squashScales(env, v.squashAmplitudeX, v.squashAmplitudeY);
+      sx = s.scaleX;
+      sy = s.scaleY;
     }
+    if (!reduce && v.idleJiggle > 0 && bs.kind !== 'rock') {
+      const j = idleJiggleScales(this.clockMs, v.idleJiggle, live.phase);
+      sx *= j.scaleX;
+      sy *= j.scaleY;
+    }
+    live.view.setSquash(sx, sy);
 
-    // tier-11 shimmer
     if (bs.tier === APEX_TIER && bs.kind === 'ball') {
       live.view.setHalo(reduce ? 0.35 : 0.25 + 0.25 * Math.sin(this.clockMs / 260));
     }
@@ -404,13 +489,7 @@ export class BoardScene {
       this.heldView = null;
       this.heldTier = tier;
       if (tier > 0) {
-        this.heldView = new BallView({
-          tier,
-          radius: tierRadiusPx(tier),
-          quality: this.opts.quality,
-          coreTexture: getCoreTexture(tier),
-          showTierNumber: this.opts.showTierNumbers,
-        });
+        this.heldView = this.makeView(tier, tierRadiusPx(tier));
         this.ballLayer.addChild(this.heldView.container);
       }
     }
@@ -421,25 +500,23 @@ export class BoardScene {
     this.heldView.setTransform(x, PHYSICS.dropRailYPx, 0);
     this.heldView.container.alpha = snap.canDrop ? 1 : 0.6;
     if (!this.opts.reduceMotion) {
-      const g = computeGaze({ x, y: PHYSICS.dropRailYPx, pointer: this.pointer, vxPx: 0, vyPx: 0 });
+      const g = computeGaze(
+        { x, y: PHYSICS.dropRailYPx, pointer: this.pointer, vxPx: 0, vyPx: 0 },
+        this.visual,
+      );
       this.heldView.setOrientation(buildRotationMatrix(0, g.yaw, g.pitch));
     }
     if (this.ghostVisible) {
       const dash = 8;
       const gap = 8;
       const top = PHYSICS.dropRailYPx + r;
-      for (let y = top; y < BOARD_H - 4; y += dash + gap) {
+      for (let y = top; y < BOARD_H - 4; y += dash + gap)
         this.ghost.moveTo(x, y).lineTo(x, Math.min(y + dash, BOARD_H - 4));
-      }
       this.ghost.stroke({ width: 2, color: '#ffffff', alpha: 0.55, cap: 'round' });
       this.ghost
         .moveTo(x - r, PHYSICS.dropRailYPx)
         .lineTo(x + r, PHYSICS.dropRailYPx)
-        .stroke({
-          width: 1,
-          color: '#ffffff',
-          alpha: 0.3,
-        });
+        .stroke({ width: 1, color: '#ffffff', alpha: 0.3 });
     }
   }
 
@@ -457,6 +534,7 @@ export class BoardScene {
     for (const d of this.dying) d.view.destroy();
     this.dying.length = 0;
     this.heldView?.destroy();
+    this.frame.destroy();
     this.root.destroy({ children: true });
   }
 }

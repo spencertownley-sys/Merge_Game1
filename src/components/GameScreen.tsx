@@ -7,13 +7,14 @@ import { PixiStage } from '../render/PixiStage';
 import { SimClient } from '../hooks/SimClient';
 import { useGameStore } from '../store/gameStore';
 import { useSettings } from '../store/settingsStore';
+import { useTuning } from '../store/tuningStore';
 import { newRunSeed, useUi } from '../store/uiStore';
 import { useJourney, isLandRestored } from '../store/journeyStore';
 import { runRepository } from '../persistence/RunRepository';
 import { LevelRuntime, toSimLevelConfig, type LevelStatus } from '../journey/levelRuntime';
 import { LEVELS } from '../journey/levels';
 import { tierName } from '../render/coreArt';
-import { HUDBottom, HUDTop } from './HUD';
+import { EvolutionStrip, HUDBottom, HUDTop } from './HUD';
 import { PauseOverlay } from './PauseOverlay';
 import { ResultsScreen } from './ResultsScreen';
 import { SettingsPanel } from './SettingsPanel';
@@ -96,7 +97,7 @@ export function GameScreen(props: GameScreenProps) {
       }
     });
     c.onError = (m) => toast(`Physics error: ${m}`, 'error');
-    c.start({ seed, level: simLevel });
+    c.start({ seed, level: simLevel, tuning: useTuning.getState().tuning.physics });
     let live = true;
     runRepository
       .getBestScore(mode, levelId ?? undefined)
@@ -122,6 +123,15 @@ export function GameScreen(props: GameScreenProps) {
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [setPaused]);
+
+  // Admin tuning applies live to the running sim.
+  const physicsTuning = useTuning((s) => s.tuning.physics);
+  const visualTuning = useTuning((s) => s.tuning.visual);
+  const artStyle = useTuning((s) => s.tuning.artStyle);
+  const artOverrides = useTuning((s) => s.tuning.art);
+  useEffect(() => {
+    clientRef.current?.applyTuning(physicsTuning);
+  }, [physicsTuning]);
 
   // Save the run (and journey progress) once when it ends.
   useEffect(() => {
@@ -254,6 +264,11 @@ export function GameScreen(props: GameScreenProps) {
             showTierNumbers={showTierNumbers}
             land={level?.land}
             restored={level ? landRestoredNow : true}
+            visual={visualTuning}
+            artStyle={artStyle}
+            tierArt={artOverrides.tierArt}
+            frameArtUrl={artOverrides.frameArt[level?.land ?? 'sunmeadow-hollow']}
+            backgroundArtUrl={artOverrides.backgroundArt[level?.land ?? 'sunmeadow-hollow']}
             onReady={() => setStageReady(true)}
           />
         )}
@@ -270,6 +285,7 @@ export function GameScreen(props: GameScreenProps) {
         )}
       </div>
       <HUDBottom />
+      <EvolutionStrip />
 
       {paused && !runEnded && !showSettings && (
         <PauseOverlay

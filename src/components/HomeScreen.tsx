@@ -10,6 +10,7 @@ import { TierChip } from './HUD';
 export function HomeScreen() {
   const navigate = useUi((s) => s.navigate);
   const [best, setBest] = useState<number | null>(null);
+  const [titleTaps, setTitleTaps] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -30,7 +31,20 @@ export function HomeScreen() {
             <TierChip key={t} tier={t} size={28 + t * 2} />
           ))}
         </div>
-        <h1 className="font-display text-5xl font-bold tracking-tight text-ink">{BRAND_NAME}</h1>
+        <h1
+          className="font-display text-5xl font-bold tracking-tight text-ink select-none"
+          onClick={() => {
+            // Hidden admin entry: tap the title five times.
+            const n = titleTaps + 1;
+            setTitleTaps(n);
+            if (n >= 5) {
+              setTitleTaps(0);
+              navigate({ name: 'admin' });
+            }
+          }}
+        >
+          {BRAND_NAME}
+        </h1>
         <p className="max-w-xs text-sm text-ink-soft">
           Gather the scattered light. Merge motes into brighter ones and bring colour back to the
           lands.

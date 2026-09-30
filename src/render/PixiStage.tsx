@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { Application } from 'pixi.js';
 import { BoardScene, type BoardSceneOptions } from './boardScene';
-import { preloadAllCoreTextures } from './coreArt';
+import { preloadCoreTextures } from './artStyles';
 import type { SimClient } from '../hooks/SimClient';
 import { PHYSICS } from '../config/physics';
 
@@ -49,7 +49,7 @@ export function PixiStage(props: PixiStageProps) {
           app.destroy(true);
           return;
         }
-        await preloadAllCoreTextures();
+        await preloadCoreTextures();
         if (disposed) {
           app.destroy(true);
           return;
@@ -63,6 +63,12 @@ export function PixiStage(props: PixiStageProps) {
           showTierNumbers: p.showTierNumbers,
           land: p.land,
           restored: p.restored,
+          visual: p.visual,
+          artStyle: p.artStyle,
+          tierArt: p.tierArt,
+          frameArtUrl: p.frameArtUrl,
+          backgroundArtUrl: p.backgroundArtUrl,
+          showFrame: p.showFrame,
         });
         sceneRef.current = scene;
         const doResize = () => scene?.resize(host.clientWidth, host.clientHeight);
@@ -104,8 +110,26 @@ export function PixiStage(props: PixiStageProps) {
       showTierNumbers: props.showTierNumbers,
       land: props.land,
       restored: props.restored,
+      visual: props.visual,
+      artStyle: props.artStyle,
+      tierArt: props.tierArt,
+      frameArtUrl: props.frameArtUrl,
+      backgroundArtUrl: props.backgroundArtUrl,
+      showFrame: props.showFrame,
     });
-  }, [props.quality, props.reduceMotion, props.showTierNumbers, props.land, props.restored]);
+  }, [
+    props.quality,
+    props.reduceMotion,
+    props.showTierNumbers,
+    props.land,
+    props.restored,
+    props.visual,
+    props.artStyle,
+    props.tierArt,
+    props.frameArtUrl,
+    props.backgroundArtUrl,
+    props.showFrame,
+  ]);
 
   // Pointer input: drag anywhere on the board to position, release to drop (PRD §3.1).
   useEffect(() => {

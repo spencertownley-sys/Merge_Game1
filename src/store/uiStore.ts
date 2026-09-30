@@ -7,7 +7,8 @@ export type Screen =
   | { name: 'classic'; seed: number; runKey: number }
   | { name: 'journey' }
   | { name: 'level'; levelId: number; runKey: number }
-  | { name: 'settings'; from: Screen };
+  | { name: 'settings'; from: Screen }
+  | { name: 'admin' };
 
 export interface Toast {
   id: number;

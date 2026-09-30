@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { COMBO, comboMultiplier } from '../config/scoring';
-import { tierDef } from '../config/tiers';
+import { TIER_COUNT, tierDef } from '../config/tiers';
 import { tierName } from '../render/coreArt';
 import { useGameStore } from '../store/gameStore';
 
@@ -76,6 +76,28 @@ export function HUDBottom() {
           <TierChip key={i} tier={t} size={i === 0 ? 32 : 26} />
         ))}
       </span>
+    </div>
+  );
+}
+
+/** The "evolution" chart classic fruit-merge games show: every tier in merge order, with the
+ *  best tier reached so far highlighted. */
+export function EvolutionStrip() {
+  const top = useGameStore((s) => s.topTier);
+  return (
+    <div
+      className="flex w-full items-center justify-center gap-1 px-3 pb-2"
+      aria-label="Merge order"
+    >
+      {Array.from({ length: TIER_COUNT }, (_, i) => i + 1).map((t) => (
+        <span
+          key={t}
+          className={`flex items-center transition-opacity ${t <= top ? 'opacity-100' : 'opacity-35'}`}
+        >
+          <TierChip tier={t} size={14 + t * 1.6} />
+          {t < TIER_COUNT && <span className="px-0.5 text-[10px] text-ink-soft">›</span>}
+        </span>
+      ))}
     </div>
   );
 }

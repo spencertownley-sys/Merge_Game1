@@ -7,6 +7,7 @@
 //   yaw, pitch   = gaze toward pointer (max ±20°) + wobble from velocity
 
 import { IMPACT_SQUASH } from '../config/physics';
+import { DEFAULT_VISUAL, type VisualTuning } from '../config/tuning';
 
 export const ORIENTATION = {
   visualSpinScale: 0.6,
@@ -88,8 +89,11 @@ export interface GazeInput {
 
 /** yaw/pitch in radians. Positive yaw = face toward screen-right, positive pitch = face
  *  toward screen-up (the acceptance test in §9.3 checks the yaw direction). */
-export function computeGaze(input: GazeInput): { yaw: number; pitch: number } {
-  const max = ORIENTATION.gazeMaxDeg * DEG;
+export function computeGaze(
+  input: GazeInput,
+  tuning: VisualTuning = DEFAULT_VISUAL,
+): { yaw: number; pitch: number } {
+  const max = tuning.gazeMaxDeg * DEG;
   let yaw = 0;
   let pitch = 0;
   if (input.pointer) {
@@ -98,7 +102,7 @@ export function computeGaze(input: GazeInput): { yaw: number; pitch: number } {
     yaw = Math.max(-1, Math.min(1, dx / ORIENTATION.gazeRangePx)) * max;
     pitch = Math.max(-1, Math.min(1, -dy / ORIENTATION.gazeRangePx)) * max;
   }
-  const wobbleMax = ORIENTATION.wobbleMaxDeg * DEG;
+  const wobbleMax = tuning.wobbleMaxDeg * DEG;
   const lean = (v: number) =>
     Math.max(-wobbleMax, Math.min(wobbleMax, v * ORIENTATION.wobbleDegPerPxPerSec * DEG));
   yaw += lean(input.vxPx);
@@ -106,8 +110,12 @@ export function computeGaze(input: GazeInput): { yaw: number; pitch: number } {
   return { yaw, pitch };
 }
 
-export function displayAngleFor(bodyAngle: number, settle: number): number {
-  return wrapToPi(bodyAngle) * ORIENTATION.visualSpinScale * (1 - settle);
+export function displayAngleFor(
+  bodyAngle: number,
+  settle: number,
+  visualSpinScale: number = ORIENTATION.visualSpinScale,
+): number {
+  return wrapToPi(bodyAngle) * visualSpinScale * (1 - settle);
 }
 
 /**
@@ -173,25 +181,51 @@ export function buildRotationMatrix(
 
 /** Amplitude scales with impact speed and is clamped so a gentle settle barely squishes and a
  *  hard drop squishes noticeably. Returns 0..1. */
-export function squashAmplitude(impactSpeedMps: number): number {
-  const t = (impactSpeedMps - IMPACT_SQUASH.impactThresholdMps) / 6;
+export function squashAmplitude(
+  impactSpeedMps: number,
+  threshold: number = IMPACT_SQUASH.impactThresholdMps,
+): number {
+  const t = (impactSpeedMps - threshold) / 6;
   return Math.min(1, Math.max(0.25, 0.25 + t));
 }
 
-/** Damped oscillation: quick flatten, one rebound overshoot, settle (~220 ms). */
-export function squashEnvelope(tMs: number, amplitude: number): number {
-  const D = IMPACT_SQUASH.durationMs;
+/** Damped oscillation: quick flatten, `jiggleCycles` rebounds, settle over `durationMs`
+ *  (the §9.2b defaults are 220 ms and 1.5 cycles; the admin "jiggle" sliders tune both). */
+export function squashEnvelope(
+  tMs: number,
+  amplitude: number,
+  durationMs: number = IMPACT_SQUASH.durationMs,
+  jiggleCycles: number = DEFAULT_VISUAL.jiggleCycles,
+): number {
+  const D = durationMs;
   if (tMs < 0 || tMs > D) return 0;
-  const periodMs = D / 1.5; // one flatten + one rebound inside the envelope
+  const periodMs = D / Math.max(0.25, jiggleCycles);
   const decay = 1 - tMs / D;
   return amplitude * decay * Math.cos((2 * Math.PI * tMs) / periodMs);
 }
 
-export function squashScales(envelope: number): { scaleX: number; scaleY: number } {
+export function squashScales(
+  envelope: number,
+  amplitudeX: number = IMPACT_SQUASH.amplitudeX,
+  amplitudeY: number = IMPACT_SQUASH.amplitudeY,
+): { scaleX: number; scaleY: number } {
   return {
-    scaleX: 1 + envelope * IMPACT_SQUASH.amplitudeX,
-    scaleY: 1 - envelope * IMPACT_SQUASH.amplitudeY,
+    scaleX: 1 + envelope * amplitudeX,
+    scaleY: 1 - envelope * amplitudeY,
   };
+}
+
+/** Constant soft "jelly" breathing at rest: a slow, slightly out-of-phase x/y wobble whose
+ *  amplitude is the admin `idleJiggle` value (0 disables). Phase offset per ball keeps a pile
+ *  from pulsing in lockstep. */
+export function idleJiggleScales(
+  clockMs: number,
+  amplitude: number,
+  phase: number,
+): { scaleX: number; scaleY: number } {
+  if (amplitude <= 0) return { scaleX: 1, scaleY: 1 };
+  const t = clockMs / 420 + phase;
+  return { scaleX: 1 + amplitude * Math.sin(t), scaleY: 1 - amplitude * Math.sin(t + 0.6) };
 }
 
 // --- §5.3 merge result pop -----------------------------------------------------------------

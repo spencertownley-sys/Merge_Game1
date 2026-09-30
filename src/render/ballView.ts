@@ -6,6 +6,7 @@ import { ballUniformsOf, createBallShader } from './ballShader';
 import { drawRim } from './rim';
 import { createSimpleBall, type SimpleBall } from './simpleSprite';
 import { tierDef } from '../config/tiers';
+import type { ArtStyleId } from '../config/tuning';
 
 let quadGeometry: MeshGeometry | null = null;
 
@@ -27,6 +28,9 @@ export interface BallViewOptions {
   tier: number;
   radius: number;
   quality: GraphicsQuality;
+  /** Admin art style. 'gummy' uses the shader (unless quality is 'simple'); the others are
+   *  sprite-based and ignore quality. */
+  artStyle?: ArtStyleId;
   coreTexture: Texture;
   showTierNumber: boolean;
   /** Journey obstacles render with an overlay. */
@@ -64,17 +68,29 @@ export class BallView {
       return;
     }
 
-    if (opts.quality === 'high') {
+    const style = opts.artStyle ?? 'gummy';
+    if (style === 'gummy' && opts.quality === 'high') {
       const shader = createBallShader(opts.tier, opts.coreTexture);
       this.mesh = new Mesh({ geometry: getQuadGeometry(), shader });
       this.mesh.scale.set(opts.radius);
       this.body.addChild(this.mesh);
     } else {
-      this.simple = createSimpleBall(opts.tier, opts.radius, opts.coreTexture);
+      this.simple = createSimpleBall(
+        opts.tier,
+        opts.radius,
+        opts.coreTexture,
+        style === 'gummy' ? 'watercolor' : style,
+      );
       this.body.addChild(this.simple.container);
     }
 
-    this.rim = drawRim(new Graphics(), opts.tier, opts.radius);
+    // The bold fruit style carries its own outline; the accessibility rim still draws (§3),
+    // slightly inset so it reads as a second ring rather than doubling the outline.
+    this.rim = drawRim(
+      new Graphics(),
+      opts.tier,
+      style === 'fruit' ? opts.radius * 0.9 : opts.radius,
+    );
     this.body.addChild(this.rim);
 
     if (this.kind === 'ice') this.setFrozen(true);

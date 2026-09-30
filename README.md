@@ -53,6 +53,20 @@ and leave `VITE_BASE` unset. Verify offline play after the first load once insta
 Not yet done: the commissioned tier and land art. Photo personalization (Phase 1.5) is
 intentionally not started.
 
+**Admin back end (in-app, saved on the device)** — open it with `?admin=1` or by tapping the
+title on the Home screen five times. It tunes the game feel live against a preview board:
+fall speed, top speed, air drag, drop cooldown (Fall); grip and roll decay (Roll); bounce
+(Bounce); landing squash width/height, jiggle length and wobble count, trigger speed, idle
+jelly (Jiggle); visible roll, lean and gaze (Face motion). Presets: Design doc defaults, Fruit
+Merge feel, Floaty, Bouncy. The Art tab switches the mote art style (Gummy glow / Watercolor
+paper / Bold fruit) and takes custom image URLs per tier and per-land frame / backdrop art.
+Tuning is persisted in IndexedDB and can be exported/imported as JSON; paste exported values
+into `src/config/physics.ts` / `src/config/tuning.ts` to make them the shipped defaults.
+
+**Land frames** — each level is framed by artwork for its land (`src/render/frame.ts`,
+procedural until commissioned pieces exist; any land's frame can be replaced with an image from
+the Admin screen). The frame dims with the land until the land is restored.
+
 Dev-only URL flags (`npm run dev`): `?debug=shader` (shader orientation harness),
 `?debug=fill` (all tier-5 drops, used by the smoke test), `?debug=tuning` (live physics panel),
 `?debug=determinism` (in-browser replay check used by the cross-browser E2E).

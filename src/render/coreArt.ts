@@ -6,6 +6,7 @@
 
 import { Assets, Texture } from 'pixi.js';
 import { TIER_COUNT, tierDef } from '../config/tiers';
+import type { ArtStyleId } from '../config/tuning';
 
 /** Drop real art here: tier -> URL under public/. Missing tiers use the placeholder. */
 export const TIER_ART_URLS: Partial<Record<number, string>> = {};
@@ -38,8 +39,14 @@ function lighten(hex: string, amount: number): string {
   return `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`;
 }
 
-/** Draws the placeholder core for a tier into a fresh canvas of the tier's bake size. */
-export function drawPlaceholderCore(tier: number, size?: number): HTMLCanvasElement {
+/** Draws the placeholder core for a tier into a fresh canvas of the tier's bake size. The
+ *  face/glow treatment follows the active art style: 'gummy' (soft inner light), 'watercolor'
+ *  (paper wash, thin ink), 'fruit' (bold flat colour, thick outline, big eyes). */
+export function drawPlaceholderCore(
+  tier: number,
+  size?: number,
+  style: ArtStyleId = 'gummy',
+): HTMLCanvasElement {
   const def = tierDef(tier);
   const S = size ?? def.bakeTextureSize;
   const canvas = document.createElement('canvas');
@@ -52,12 +59,33 @@ export function drawPlaceholderCore(tier: number, size?: number): HTMLCanvasElem
 
   // Inner light: bright, near-white centre fading into the tier's glow colour.
   const glow = ctx.createRadialGradient(c, c, 0, c, c, R);
-  glow.addColorStop(0, 'rgba(255, 252, 240, 1)');
-  glow.addColorStop(0.35, lighten(def.rimColor, 0.55));
-  glow.addColorStop(0.7, lighten(def.rimColor, 0.25));
-  glow.addColorStop(1, lighten(def.rimColor, 0.1));
+  if (style === 'fruit') {
+    glow.addColorStop(0, lighten(def.rimColor, 0.35));
+    glow.addColorStop(0.75, lighten(def.rimColor, 0.05));
+    glow.addColorStop(1, def.rimColor);
+  } else if (style === 'watercolor') {
+    glow.addColorStop(0, 'rgba(255, 250, 242, 1)');
+    glow.addColorStop(0.5, lighten(def.rimColor, 0.6));
+    glow.addColorStop(1, lighten(def.rimColor, 0.35));
+  } else {
+    glow.addColorStop(0, 'rgba(255, 252, 240, 1)');
+    glow.addColorStop(0.35, lighten(def.rimColor, 0.55));
+    glow.addColorStop(0.7, lighten(def.rimColor, 0.25));
+    glow.addColorStop(1, lighten(def.rimColor, 0.1));
+  }
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, S, S);
+  if (style === 'watercolor') {
+    // paper grain: faint speckle so the wash reads as pigment on paper
+    ctx.globalAlpha = 0.08;
+    ctx.fillStyle = '#5a4a44';
+    for (let i = 0; i < S * 1.2; i++) {
+      const gx = ((i * 7919) % S) + 0.5;
+      const gy = ((i * 104729) % S) + 0.5;
+      ctx.fillRect(gx, gy, 1.2, 1.2);
+    }
+    ctx.globalAlpha = 1;
+  }
 
   // Higher tiers get a few soft sparkles — "the most luminous and detailed orb in the set".
   const sparkles = Math.max(0, tier - 4);
@@ -77,10 +105,11 @@ export function drawPlaceholderCore(tier: number, size?: number): HTMLCanvasElem
 
   // Face: soft ink, gentle and simple. Eye shape alternates a little by tier so the set
   // reads as a family without being identical.
-  const ink = 'rgba(58, 43, 63, 0.92)';
+  const ink = style === 'fruit' ? 'rgba(40, 24, 30, 1)' : 'rgba(58, 43, 63, 0.92)';
   const eyeY = c - S * 0.04;
-  const eyeDx = S * 0.16;
-  const eyeR = S * (tier % 2 === 0 ? 0.055 : 0.05);
+  const eyeDx = S * (style === 'fruit' ? 0.19 : 0.16);
+  const faceScale = style === 'fruit' ? 1.45 : 1;
+  const eyeR = S * (tier % 2 === 0 ? 0.055 : 0.05) * faceScale;
   ctx.fillStyle = ink;
   for (const sgn of [-1, 1]) {
     ctx.beginPath();
@@ -100,10 +129,10 @@ export function drawPlaceholderCore(tier: number, size?: number): HTMLCanvasElem
   }
   // Smile
   ctx.strokeStyle = ink;
-  ctx.lineWidth = Math.max(1.5, S * 0.018);
+  ctx.lineWidth = Math.max(1.5, S * (style === 'fruit' ? 0.03 : 0.018));
   ctx.lineCap = 'round';
   ctx.beginPath();
-  const smileW = S * (0.06 + 0.01 * Math.min(tier, 6));
+  const smileW = S * (0.06 + 0.01 * Math.min(tier, 6)) * faceScale;
   ctx.arc(c, c + S * 0.07, smileW, Math.PI * 0.15, Math.PI * 0.85);
   ctx.stroke();
   // Blush
@@ -115,10 +144,11 @@ export function drawPlaceholderCore(tier: number, size?: number): HTMLCanvasElem
   }
 
   // Radial feather: opaque centre, fully transparent by the edge (§8.4 / §9.3 expectation).
+  // The flat 'fruit' style keeps a harder edge so the face reads as a printed sticker.
   ctx.globalCompositeOperation = 'destination-in';
   const feather = ctx.createRadialGradient(c, c, 0, c, c, R);
   feather.addColorStop(0, 'rgba(0,0,0,1)');
-  feather.addColorStop(0.5, 'rgba(0,0,0,1)');
+  feather.addColorStop(style === 'fruit' ? 0.82 : 0.5, 'rgba(0,0,0,1)');
   feather.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = feather;
   ctx.fillRect(0, 0, S, S);

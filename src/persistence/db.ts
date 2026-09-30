@@ -4,6 +4,7 @@
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { GameMode, LevelProgress, MergeEvent, Settings } from '../types';
+import type { GameTuning } from '../config/tuning';
 
 export interface RunRecord {
   id: string;
@@ -31,22 +32,32 @@ export interface GameDB extends DBSchema {
     key: keyof Settings;
     value: { key: keyof Settings; value: Settings[keyof Settings] };
   };
+  /** Admin game-feel tuning; a single record under key 'active'. */
+  tuning: {
+    key: string;
+    value: { key: string; value: GameTuning; updatedAt: string };
+  };
 }
 
 export const DB_NAME = 'merge-game'; // brand-neutral on purpose: renaming the app must not orphan saves
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase<GameDB>> | null = null;
 
 export function getDB(): Promise<IDBPDatabase<GameDB>> {
   if (!dbPromise) {
     dbPromise = openDB<GameDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        const runs = db.createObjectStore('runs', { keyPath: 'id' });
-        runs.createIndex('byPlayedAt', 'playedAt');
-        runs.createIndex('byMode', 'mode');
-        db.createObjectStore('journeyProgress', { keyPath: 'levelId' });
-        db.createObjectStore('settings', { keyPath: 'key' });
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const runs = db.createObjectStore('runs', { keyPath: 'id' });
+          runs.createIndex('byPlayedAt', 'playedAt');
+          runs.createIndex('byMode', 'mode');
+          db.createObjectStore('journeyProgress', { keyPath: 'levelId' });
+          db.createObjectStore('settings', { keyPath: 'key' });
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('tuning', { keyPath: 'key' });
+        }
       },
     });
   }
