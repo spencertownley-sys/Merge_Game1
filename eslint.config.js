@@ -24,6 +24,8 @@ export default [
     },
     rules: {
       ...tseslint.configs.recommended.rules,
+      // TypeScript resolves globals/types (e.g. DOM lib types); no-undef gives false positives.
+      'no-undef': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       // Determinism guardrail (CLAUDE.md "Gotchas"): Math.random anywhere in the
       // physics/spawn path silently breaks seeded fairness. engine/rng.ts is the
@@ -52,7 +54,16 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'public/**'],
+    ignores: [
+      'dist/**',
+      'dist-*/**',
+
+      'dev-dist/**',
+      'test-results/**',
+      'playwright-report/**',
+      'node_modules/**',
+      'public/**',
+    ],
   },
   prettierConfig,
 ];

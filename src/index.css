@@ -1,109 +1,63 @@
+@import 'tailwindcss';
+
+/* Design tokens per UI_UX_NOTES.md §2: warm coral primary, golden accent, soft neutrals. */
+@theme {
+  --color-coral: #f25f5c;
+  /* AA-contrast coral for white text on filled buttons (5.0:1 measured by Lighthouse); #f25f5c is 3.2:1. */
+  --color-coral-deep: #c93c39;
+  --color-gold: #ffd700;
+  --color-cream: #faf7f2;
+  --color-ink: #2b2622;
+  --color-ink-soft: #6b5f66;
+  --color-paper: #fffdf9;
+  --font-display: 'Fredoka', 'Baloo 2', 'Nunito', system-ui, sans-serif;
+  --font-body: 'Manrope', 'Inter', system-ui, sans-serif;
+  --radius-card: 16px;
+}
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  color-scheme: light;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-cream);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  text-rendering: optimizeLegibility;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
+html,
+body,
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  margin: 0;
+  height: 100%;
+  overscroll-behavior: none;
 }
 
 body {
-  margin: 0;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #fff3e2 0%, var(--color-cream) 60%), var(--color-cream);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.font-display {
+  font-family: var(--font-display);
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+/* Touch targets ≥ 44px (PRD / CLAUDE.md Step 8) */
+@utility btn {
+  @apply inline-flex min-h-11 min-w-11 items-center justify-center rounded-full px-6 py-3 font-display text-lg font-semibold transition active:scale-95 focus-visible:ring-4 focus-visible:ring-gold/60 focus-visible:outline-none;
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+.btn-primary {
+  @apply btn bg-coral-deep text-white shadow-lg shadow-coral/30 hover:brightness-105;
 }
-p {
-  margin: 0;
+.btn-secondary {
+  @apply btn bg-white/80 text-ink shadow-md ring-1 ring-ink/10 hover:bg-white;
 }
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.btn-ghost {
+  @apply btn bg-transparent text-ink-soft hover:bg-ink/5;
 }
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.card {
+  @apply rounded-[16px] bg-paper/95 shadow-xl ring-1 ring-ink/5 backdrop-blur;
 }
