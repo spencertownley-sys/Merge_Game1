@@ -56,8 +56,8 @@ export default [
   {
     ignores: [
       'dist/**',
-      'dist-artifact/**',
-      'dist-e2e/**',
+      'dist-*/**',
+
       'dev-dist/**',
       'test-results/**',
       'playwright-report/**',
