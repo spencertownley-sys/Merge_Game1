@@ -1,6 +1,7 @@
 # Static deploy to GitHub Pages (CLAUDE.md Step 10). The build is host-agnostic: only
-# VITE_BASE changes per host. Enable Pages once in the repo settings with
-# "Source: GitHub Actions"; after that every push to main publishes.
+# VITE_BASE changes per host. The configure-pages step enables Pages (source: GitHub
+# Actions) on first run using the workflow's pages: write permission; after that every push
+# to main publishes.
 name: Deploy to GitHub Pages
 
 on:
@@ -26,6 +27,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - run: npm ci
       - run: npm run build
         env:
