@@ -63,7 +63,7 @@ function Router({ debugSim, tuningPanel }: { debugSim?: SimLevelConfig; tuningPa
         />
       );
     case 'journey':
-      return <JourneyMap />;
+      return <JourneyMap playStory={screen.story} />;
     case 'level': {
       const level = levelById(screen.levelId);
       if (!level) return <JourneyMap />;
@@ -112,9 +112,12 @@ export default function App() {
   useEffect(() => {
     void hydrateTuning();
   }, [hydrateTuning]);
-  // ?admin=1 opens the admin back end directly (it is also reachable from Home).
+  // ?admin=1 opens the admin back end directly (it is also reachable from Home); ?story=1
+  // is a shareable link straight into the Journey intro story.
   useEffect(() => {
-    if (new URLSearchParams(location.search).get('admin') === '1') navigate({ name: 'admin' });
+    const params = new URLSearchParams(location.search);
+    if (params.get('admin') === '1') navigate({ name: 'admin' });
+    else if (params.get('story') === '1') navigate({ name: 'journey', story: true });
   }, [navigate]);
   const [debug] = useState(() =>
     DEBUG_HOOKS ? new URLSearchParams(location.search).get('debug') : null,

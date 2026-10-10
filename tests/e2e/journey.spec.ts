@@ -55,3 +55,19 @@ test('completing Journey level 1 awards stars and unlocks level 2', async ({ pag
   await expect(page.getByTestId('level-2')).toBeEnabled();
   await expect(page.getByTestId('level-1')).toContainText('★');
 });
+
+test('the ?story=1 link opens straight into the intro story, even after it was seen', async ({
+  page,
+}) => {
+  for (let visit = 0; visit < 2; visit++) {
+    await page.goto('/?story=1');
+    await expect(page.getByTestId('intro-cutscene')).toBeVisible();
+    await expect(page.getByTestId('intro-text')).toContainText('Skylight');
+    await page.getByTestId('intro-skip').click();
+    await expect(page.getByTestId('journey-map')).toBeVisible();
+    expect(new URL(page.url()).searchParams.has('story')).toBe(false);
+  }
+  // A reload after the story lands on the map, not back in the story.
+  await page.reload();
+  await expect(page.getByTestId('intro-cutscene')).toBeHidden();
+});
