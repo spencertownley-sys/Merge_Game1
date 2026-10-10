@@ -129,3 +129,39 @@ describe('LevelRuntime goals', () => {
     });
   });
 });
+
+describe('combo goal (JOURNEY_PLAN.md §2.4)', () => {
+  const merge = (comboCount: number, atMs = 0): SimEvent => ({
+    type: 'merge',
+    atMs,
+    tier: 3,
+    parentIds: [1, 2],
+    resultId: 3,
+    x: 0,
+    y: 0,
+    points: 1,
+    comboCount,
+  });
+
+  it('completes once a chain reaches the combo, and shows the best combo so far', () => {
+    const rt = new LevelRuntime({ ...base, goals: [{ type: 'combo', combo: 4 }] });
+    let st = rt.applyFrame(snap({}), [merge(1), merge(2), merge(3)]);
+    expect(st.goals[0]).toMatchObject({ current: 3, target: 4, done: false });
+    expect(st.goals[0]!.label).toBe('Make a ×4 combo');
+    st = rt.applyFrame(snap({}), [merge(1)]); // a new chain starts; best stays 3
+    expect(st.goals[0]!.current).toBe(3);
+    st = rt.applyFrame(snap({}), [merge(2), merge(3), merge(4)]);
+    expect(st.goals[0]!.done).toBe(true);
+    expect(st.outcome).toBe('won');
+  });
+
+  it('counts each chain that reaches the combo once, for repeated combo goals', () => {
+    const rt = new LevelRuntime({ ...base, goals: [{ type: 'combo', combo: 5, times: 2 }] });
+    const chain = [1, 2, 3, 4, 5, 6].map((c) => merge(c)); // a ×6 chain passes ×5 once
+    let st = rt.applyFrame(snap({}), chain);
+    expect(st.goals[0]).toMatchObject({ current: 1, target: 2, done: false });
+    expect(st.goals[0]!.label).toBe('Make 2 ×5 combos');
+    st = rt.applyFrame(snap({}), chain.slice(0, 5));
+    expect(st.goals[0]!.done).toBe(true);
+  });
+});

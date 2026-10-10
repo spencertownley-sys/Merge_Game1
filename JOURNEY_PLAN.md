@@ -138,12 +138,12 @@ goal types, obstacles and hazards the engine already supports.
 | 26  | Frostglass Tundra  | Ice Field           | Free 8 ice motes                 | none                                  | Chains of thaws (built)             |
 | 27  | Frostglass Tundra  | Glacier Gate        | Reach tier 7                     | 6 ice motes, 32 drops                 | Using ice as a floor (built)        |
 | 28  | Frostglass Tundra  | The Frozen Heart    | Free 10 ice motes, some tier 5–6 | 26 drops                              | **Boss** (built)                    |
-| 29  | Neonoko City       | Opening Night       | Make a ×4 combo — new code       | none                                  | Combos on purpose                   |
-| 30  | Neonoko City       | Rush Hour           | Score 1,200                      | 90 s                                  | Speed and flourish                  |
-| 31  | Neonoko City       | Lantern Parade      | Two ×5 combos and reach tier 8   | 110 drops                             | **Boss**                            |
-| 32  | Starlit Harbor     | Low Tide            | Reach tier 7                     | none                                  | Breather                            |
-| 33  | Starlit Harbor     | Boats at Rest       | Score 600                        | none                                  | Breather                            |
-| 34  | Starlit Harbor     | Dawn Bells          | Make 3 tier-6 motes              | none                                  | Breather, gentle mastery            |
+| 29  | Neonoko City       | Opening Night       | Make a ×4 combo                  | 40 drops                              | Combos on purpose (built)           |
+| 30  | Neonoko City       | Rush Hour           | Score 620                        | 90 s                                  | Speed and flourish (built)          |
+| 31  | Neonoko City       | Lantern Parade      | Two ×5 combos and reach tier 8   | 80 drops                              | **Boss** (built)                    |
+| 32  | Starlit Harbor     | Low Tide            | Reach tier 7                     | none                                  | Breather (built)                    |
+| 33  | Starlit Harbor     | Boats at Rest       | Score 600                        | 120 drops (generous)                  | Breather (built)                    |
+| 34  | Starlit Harbor     | Dawn Bells          | Make 3 tier-6 motes              | none                                  | Breather, gentle mastery (built)    |
 | 35  | Sunreach Spire     | The First Stair     | Reach tier 8                     | fog + wind, 100 drops                 | Combined pressure                   |
 | 36  | Sunreach Spire     | Narrow Landing      | Free 5 ice motes                 | narrowed box, 60 drops                | Combined pressure                   |
 | 37  | Sunreach Spire     | Racing the Sunrise  | Reach tier 9                     | 150 s                                 | Endurance                           |
@@ -164,12 +164,12 @@ above as a starting point.
 
 ### 2.4 New engine work
 
-| Mechanic                                                                | First used | What it needs                                                                                                                                       | Size   |
-| ----------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| **Fog** (no Next preview) — built                                       | Land 6     | Allow `previewCount: 0` in `LevelDef`; hide the Next pill; a short fog overlay over the hanging zone.                                               | Small  |
-| **Shaped boxes** (pillars, narrowed walls) — built                      | Land 8     | A `walls` list in `LevelDef`: extra static colliders built with the board's walls, drawn as glass. Must stay deterministic; add a determinism test. | Medium |
-| **Combo goal**                                                          | Land 10    | A `combo` goal type (reach a combo of N, optionally K times), read from `merge` events' `comboCount`.                                               | Small  |
-| **Land intro and act cards** — land arrival stories built for lands 6–9 | Land 1     | One card component with land art, two story lines and Wick's line; shown once per land and act.                                                     | Small  |
+| Mechanic                                                                 | First used | What it needs                                                                                                                                       | Size   |
+| ------------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| **Fog** (no Next preview) — built                                        | Land 6     | Allow `previewCount: 0` in `LevelDef`; hide the Next pill; a short fog overlay over the hanging zone.                                               | Small  |
+| **Shaped boxes** (pillars, narrowed walls) — built                       | Land 8     | A `walls` list in `LevelDef`: extra static colliders built with the board's walls, drawn as glass. Must stay deterministic; add a determinism test. | Medium |
+| **Combo goal** — built                                                   | Land 10    | A `combo` goal type (reach a combo of N, optionally K times), read from `merge` events' `comboCount`.                                               | Small  |
+| **Land intro and act cards** — land arrival stories built for lands 6–11 | Land 1     | One card component with land art, two story lines and Wick's line; shown once per land and act.                                                     | Small  |
 
 ### 2.5 Release waves
 

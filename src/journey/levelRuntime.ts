@@ -43,6 +43,10 @@ export function goalLabel(goal: Goal, tierNames: (t: number) => string): string 
       return `Last ${goal.seconds} seconds`;
     case 'apex':
       return 'Reform the Skylight (apex merge)';
+    case 'combo': {
+      const times = goal.times ?? 1;
+      return times === 1 ? `Make a ×${goal.combo} combo` : `Make ${times} ×${goal.combo} combos`;
+    }
   }
 }
 
@@ -65,6 +69,9 @@ export class LevelRuntime {
   private thawed = 0;
   private rocksCleared = 0;
   private apexDone = false;
+  /** Best combo so far, and how many chains reached each combo length. */
+  private bestCombo = 0;
+  private combosReaching = new Map<number, number>();
   private wonAtMs: number | null = null;
   private failed: LevelStatus['failReason'] | null = null;
   private lastSnapshot: Snapshot | null = null;
@@ -83,6 +90,12 @@ export class LevelRuntime {
       if (e.type === 'merge')
         this.mergesByTier.set(e.tier, (this.mergesByTier.get(e.tier) ?? 0) + 1);
       if (e.type === 'apex') this.apexDone = true;
+      if (e.type === 'merge' || e.type === 'apex') {
+        // comboCount climbs by one per merge inside a chain, so each chain passes every length
+        // once: count a chain toward ×N the moment it reaches N.
+        this.bestCombo = Math.max(this.bestCombo, e.comboCount);
+        this.combosReaching.set(e.comboCount, (this.combosReaching.get(e.comboCount) ?? 0) + 1);
+      }
       if (e.type === 'thaw') this.thawed++;
     }
     return this.status();
@@ -197,6 +210,19 @@ export class LevelRuntime {
           done: this.apexDone,
           showCounter: false,
         };
+      case 'combo': {
+        const times = goal.times ?? 1;
+        const cur = this.combosReaching.get(goal.combo) ?? 0;
+        return {
+          goal,
+          label,
+          // a single ×N goal shows the best combo so far; a repeated one counts the chains
+          current: times === 1 ? Math.min(this.bestCombo, goal.combo) : Math.min(cur, times),
+          target: times === 1 ? goal.combo : times,
+          done: cur >= times,
+          showCounter: true,
+        };
+      }
     }
   }
 }

@@ -48,7 +48,9 @@ export type Goal =
   | { type: 'mergeCount'; tier: number; count: number }
   | { type: 'clearObstacle'; obstacle: 'ice' | 'rock'; count: number }
   | { type: 'survive'; seconds: number }
-  | { type: 'apex' };
+  | { type: 'apex' }
+  /** JOURNEY_PLAN.md §2.4: reach a ×N combo, `times` times (default once). */
+  | { type: 'combo'; combo: number; times?: number };
 
 /** Initial obstacle placement, in board px (§10.3). `tier` applies to ice only — the tier
  *  the frozen ball becomes once thawed. Rocks have a fixed radius (config/physics.ts). */

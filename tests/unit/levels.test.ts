@@ -22,9 +22,18 @@ describe('Journey level content', () => {
     }
   });
 
-  it('covers the first nine lands, through wave 2 (up to Frostglass Tundra)', () => {
+  it('covers the first eleven lands, into wave 3 (up to Starlit Harbor)', () => {
     const lands = new Set(LEVELS.map((l) => l.land));
-    for (const land of LANDS.slice(0, 9)) expect(lands.has(land.id), land.name).toBe(true);
+    for (const land of LANDS.slice(0, 11)) expect(lands.has(land.id), land.name).toBe(true);
+  });
+
+  it('keeps Starlit Harbor a breather: no level there can be lost on a budget', () => {
+    for (const l of LEVELS.filter((x) => x.land === 'starlit-harbor')) {
+      expect(l.timeLimitSec, l.name).toBeUndefined();
+      expect(l.dropLimit ?? Infinity, l.name).toBeGreaterThanOrEqual(100);
+      expect(l.hazards, l.name).toBeUndefined();
+      expect(l.walls, l.name).toBeUndefined();
+    }
   });
 
   it('keeps shaped-box walls inside the board, clear of obstacles, with room to drop', () => {
@@ -61,6 +70,7 @@ describe('Journey level content', () => {
       'copperleaf-orchard',
       'emberpeak',
       'cloudspire-isles',
+      'neonoko-city',
     ] as const) {
       const levels = LEVELS.filter((l) => l.land === land);
       expect(levels).toHaveLength(3);
