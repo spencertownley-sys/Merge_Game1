@@ -1,4 +1,4 @@
-// Journey levels for the first five lands, authored from the §10.5 design-intent table and
+// Journey levels for the first seven lands, authored from the §10.5 design-intent table and
 // mapped onto the story beats in ART_AND_STORY_DIRECTION.md §4.3. Further lands are content
 // to add over time — nothing here caps the count. Seeds are fixed per level so a level plays
 // the same drop sequence every attempt (fair retries).
@@ -212,12 +212,105 @@ const copperleaf: LevelDef[] = [
   },
 ];
 
+// Wave 2, part 1 (JOURNEY_PLAN.md): lands 6 and 7. Balanced 2026-10-10 against the same
+// simulated player over 40 attempts each. Mistvale's levels are foggy (previewCount 0), which
+// the bot ignores because it never reads the preview, so they sit a little above the targets:
+// Into the Reeds 100%, Stepping Stones ~80%, Firefly Hollow ~57%. Emberpeak: Cold Forge ~90%,
+// Ember Rain ~72% (one drop a second), The Great Bellows ~52%.
+const mistvale: LevelDef[] = [
+  {
+    id: 17,
+    land: 'mistvale-marsh',
+    name: 'Into the Reeds',
+    seed: 1617,
+    previewCount: 0,
+    goals: [{ type: 'reachTier', tier: 6 }],
+    stars: { two: { scoreAtLeast: 85 }, three: { scoreAtLeast: 110 } },
+    flavor: "The fog hides what's coming. Keep the pile low and calm, so anything can land safely.",
+  },
+  {
+    id: 18,
+    land: 'mistvale-marsh',
+    name: 'Stepping Stones',
+    seed: 1618,
+    previewCount: 0,
+    goals: [{ type: 'clearObstacle', obstacle: 'ice', count: 6 }],
+    dropLimit: 26,
+    obstacles: [
+      { type: 'ice', x: 35, y: 490, tier: 1 },
+      { type: 'ice', x: 100, y: 490, tier: 2 },
+      { type: 'ice', x: 165, y: 490, tier: 1 },
+      { type: 'ice', x: 235, y: 490, tier: 2 },
+      { type: 'ice', x: 300, y: 490, tier: 1 },
+      { type: 'ice', x: 365, y: 490, tier: 2 },
+    ],
+    stars: starsForDropBudget(26),
+    flavor:
+      'Six frosted motes lie in a row, like stepping stones across the water. Thaw every one.',
+  },
+  {
+    id: 19,
+    land: 'mistvale-marsh',
+    name: 'Firefly Hollow',
+    seed: 1619,
+    previewCount: 0,
+    goals: [{ type: 'score', score: 900 }],
+    dropLimit: 104,
+    obstacles: [
+      { type: 'rock', x: 70, y: 480 },
+      { type: 'rock', x: 200, y: 480 },
+      { type: 'rock', x: 330, y: 480 },
+    ],
+    stars: starsForDropBudget(104),
+    flavor:
+      'The fireflies sleep deep in the hollow. A bright, busy glow will wake every one of them.',
+  },
+];
+
+const emberpeak: LevelDef[] = [
+  {
+    id: 20,
+    land: 'emberpeak',
+    name: 'Cold Forge',
+    seed: 1720,
+    goals: [{ type: 'reachTier', tier: 7 }],
+    dropLimit: 60,
+    stars: starsForDropBudget(60),
+    flavor: 'One forge still holds an ember. Feed it a Snowglobe Charm before your drops run out.',
+  },
+  {
+    id: 21,
+    land: 'emberpeak',
+    name: 'Ember Rain',
+    seed: 1721,
+    goals: [{ type: 'score', score: 700 }],
+    timeLimitSec: 70,
+    // Bigger motes than usual tumble down the slopes (default bag is 7/6/4/2/1).
+    spawnBag: [2, 3, 5, 5, 5],
+    stars: starsForTimeBudget(70),
+    flavor: 'Big motes are tumbling down the slopes. Keep up, merge fast, and beat the clock.',
+  },
+  {
+    id: 22,
+    land: 'emberpeak',
+    name: 'The Great Bellows',
+    seed: 1722,
+    goals: [{ type: 'reachTier', tier: 8 }],
+    dropLimit: 88,
+    stars: starsForDropBudget(88),
+    flavor:
+      'The great bellows can wake the whole mountain. One Cloud Balloon would set them breathing.',
+  },
+];
+
 export const LEVELS: readonly LevelDef[] = [
   ...sunmeadow,
   ...driftmoor,
   ...whisperwood,
   ...thistledown,
   ...copperleaf,
+  ...mistvale,
+  ...emberpeak,
 ];
 
 export function levelById(id: number): LevelDef | undefined {

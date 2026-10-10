@@ -4,8 +4,12 @@
 import { useSettings } from '../store/settingsStore';
 import type { Settings } from '../types';
 
+type BooleanSetting = {
+  [K in keyof Settings]: Settings[K] extends boolean ? K : never;
+}[keyof Settings];
+
 interface ToggleProps {
-  id: keyof Settings;
+  id: BooleanSetting;
   label: string;
   hint?: string;
   disabled?: boolean;

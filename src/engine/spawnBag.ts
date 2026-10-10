@@ -53,7 +53,7 @@ export class SpawnBag {
   /** Peeks the next N tiers without consuming them — used for the drop preview
    *  (§4: "Preview shows the next 1 ball. Journey levels may override to 2."). This
    *  does not advance the RNG; it simulates ahead on a throwaway copy of the bag state. */
-  peek(count: 1 | 2): number[] {
+  peek(count: 0 | 1 | 2): number[] {
     const result: number[] = [];
     let bag = this.bag;
     let cursor = this.cursor;

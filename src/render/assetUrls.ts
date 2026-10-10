@@ -27,6 +27,11 @@ export function introPanelUrl(n: number): string {
 }
 
 /** Wick, the paper-lantern moth who guides the Keeper (transparent background). */
+/** A land's arrival story panel: public/assets/story/<land>-N.webp. */
+export function landStoryPanelUrl(land: LandId, n: number): string {
+  return `${base()}assets/story/${land}-${n}.webp`;
+}
+
 export function wickUrl(): string {
   return `${base()}assets/story/wick.webp`;
 }

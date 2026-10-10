@@ -80,7 +80,8 @@ export interface LevelDef {
   dropLimit?: number;
   timeLimitSec?: number;
   spawnBag?: [number, number, number, number, number]; // counts for tiers 1..5
-  previewCount?: 1 | 2;
+  /** 0 = fog (JOURNEY_PLAN.md §2.4): the Next preview is hidden. */
+  previewCount?: 0 | 1 | 2;
   obstacles?: Obstacle[];
   hazards?: { wind?: WindHazard };
   /** Journey levels may raise the merge contact requirement above the §5.1 default of 0. */
@@ -109,6 +110,8 @@ export interface Settings {
   showTierNumbers: boolean;
   /** The Journey intro story has played once; replays come from the map's button. */
   introSeen: boolean;
+  /** Lands whose arrival story has played once (journey/stories.ts). */
+  landStoriesSeen: LandId[];
 }
 
 export type SettingKey = keyof Settings;

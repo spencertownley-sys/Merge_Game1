@@ -71,3 +71,19 @@ test('the ?story=1 link opens straight into the intro story, even after it was s
   await page.reload();
   await expect(page.getByTestId('intro-cutscene')).toBeHidden();
 });
+
+test("a land story link plays that land's arrival story with Wick", async ({ page }) => {
+  await page.goto('/?story=mistvale-marsh');
+  // A first-time visitor sees the opening first; skipping it moves on to the land's story.
+  await page.getByTestId('intro-skip').click();
+  await expect(page.getByTestId('intro-cutscene')).toBeVisible();
+  await expect(page.getByTestId('intro-text')).toContainText('Mistvale Marsh');
+  await page.getByTestId('intro-next').click();
+  await expect(page.getByTestId('intro-text')).toContainText('fog hides which mote comes next');
+  await page.getByTestId('intro-next').click();
+  await expect(page.getByTestId('intro-next')).toHaveAttribute('aria-label', 'Into the fog');
+  await page.getByTestId('intro-next').click();
+  await expect(page.getByTestId('intro-cutscene')).toBeHidden();
+  await expect(page.getByTestId('journey-map')).toBeVisible();
+  expect(new URL(page.url()).searchParams.has('story')).toBe(false);
+});

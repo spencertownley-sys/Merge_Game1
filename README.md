@@ -9,7 +9,8 @@ merge into bigger, brighter tiers, restoring color to a series of story "lands" 
 **▶ [Play in your browser](https://spencertownley-sys.github.io/Merge_Game1/)**. It works on phones
 and desktops, and you can install it to your home screen ("Add to Home Screen" / "Install app")
 to play offline. **[Watch the story](https://spencertownley-sys.github.io/Merge_Game1/?story=1)**
-opens straight into the Journey's painted intro.
+opens straight into the Journey's painted intro; `?story=mistvale-marsh` and
+`?story=emberpeak` play those lands' arrival stories.
 
 - **How to play:** drag along the top of the glass box to aim, then let go to drop the waiting
   mote. Two matching motes that touch merge into the next, brighter tier. Chain merges for combos.
@@ -46,9 +47,10 @@ Steps 1-8 of the `CLAUDE.md` build plan are implemented:
   Higgsfield and stored in `public/assets/` (`src/render/assetUrls.ts`). The older
   code-drawn styles stay available as alternates on the Admin screen.
 - **Classic mode** — drag/release input with a ghost guide, HUD, pause, results, best score.
-- **Journey mode** — 16 levels across Sunmeadow Hollow, Driftmoor Cove, Whisperwood,
-  Thistledown Hills and Copperleaf Orchard (rock / ice / wind, drop and time limits, stars),
-  a six-panel intro story with Wick on the first visit (replayable from the map), a scrolling
+- **Journey mode** — 22 levels across the first seven lands, Sunmeadow Hollow through
+  Emberpeak (rock / ice / wind / fog, drop and time limits, stars), a six-panel intro story
+  with Wick on the first visit (replayable from the map), short painted arrival stories for
+  Mistvale Marsh and Emberpeak that explain what's new and move the mystery along, a scrolling
   land map with painted backdrops that regain colour when a land is restored, and a level
   intro card. See `JOURNEY_PLAN.md` for the remaining lands.
 - **Share card** — 1080×1350 canvas PNG via the Web Share API with a download fallback.

@@ -21,15 +21,19 @@ describe('Journey level content', () => {
     }
   });
 
-  it('covers the first five lands, wave 1 included (Thistledown Hills, Copperleaf Orchard)', () => {
+  it('covers the first seven lands, through wave 2 (Mistvale Marsh, Emberpeak)', () => {
     const lands = new Set(LEVELS.map((l) => l.land));
-    for (const land of LANDS.slice(0, 5)) expect(lands.has(land.id), land.name).toBe(true);
+    for (const land of LANDS.slice(0, 7)) expect(lands.has(land.id), land.name).toBe(true);
+  });
+
+  it('keeps every Mistvale Marsh level foggy and fog out of the other lands so far', () => {
+    for (const l of LEVELS) expect(l.previewCount === 0, l.name).toBe(l.land === 'mistvale-marsh');
   });
 
   it('gives every land with levels a closing boss that asks for more than its opener', () => {
     const tierOf = (l: (typeof LEVELS)[number]) =>
       l.goals.find((g) => g.type === 'reachTier')?.tier ?? 0;
-    for (const land of ['thistledown-hills', 'copperleaf-orchard'] as const) {
+    for (const land of ['thistledown-hills', 'copperleaf-orchard', 'emberpeak'] as const) {
       const levels = LEVELS.filter((l) => l.land === land);
       expect(levels).toHaveLength(3);
       expect(tierOf(levels[2]!)).toBeGreaterThan(tierOf(levels[0]!));

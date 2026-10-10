@@ -43,6 +43,7 @@ export function useSettingsHydration(): void {
         'simpleGraphics',
         'showTierNumbers',
         'introSeen',
+        'landStoriesSeen',
       ];
       for (const k of keys) {
         if (state[k] !== prev[k]) {

@@ -73,6 +73,24 @@ describe('GameSim determinism', () => {
 });
 
 describe('GameSim rules', () => {
+  it('fog (previewCount 0) hides the preview without changing the tier sequence', () => {
+    const clear = new GameSim(RAPIER, { seed: 9 });
+    const foggy = new GameSim(RAPIER, { seed: 9, level: { previewCount: 0 } });
+    expect(foggy.snapshot().nextTiers).toEqual([]);
+    expect(clear.snapshot().nextTiers).toHaveLength(1);
+    for (let i = 0; i < 5; i++) {
+      expect(foggy.snapshot().heldTier).toBe(clear.snapshot().heldTier);
+      clear.drop(200);
+      foggy.drop(200);
+      for (let s = 0; s < 72; s++) {
+        clear.step();
+        foggy.step();
+      }
+    }
+    clear.destroy();
+    foggy.destroy();
+  });
+
   it('enforces the 450ms drop cooldown in sim time (§2)', () => {
     const sim = new GameSim(RAPIER, { seed: 5 });
     expect(sim.drop(200)).toBe(true);
