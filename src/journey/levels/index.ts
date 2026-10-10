@@ -115,9 +115,12 @@ const whisperwood: LevelDef[] = [
     name: 'Heart of the Wood',
     seed: 1310,
     goals: [{ type: 'reachTier', tier: 8 }],
-    dropLimit: 60,
+    // Rebalanced 2026-10-10 for the reference-matched board (bigger tiers, shorter box): a
+    // simulated decent player reaches tier 8 within 60 drops in ~15% of runs, within ~100 in
+    // roughly half, which suits the land's mini-boss. Three stars still asks for ≤ 50 drops.
+    dropLimit: 100,
     obstacles: [{ type: 'rock', x: 200, y: 480 }],
-    stars: starsForDropBudget(60),
+    stars: starsForDropBudget(100),
     flavor: 'Deep in the wood, the light is oldest. A Cloud Balloon would wake it.',
   },
 ];
