@@ -4,12 +4,23 @@
 
 export const TIER_COUNT = 11;
 
-/** r(n) = 14 * 1.22^(n-1) px, per game design doc §3. n is 1-indexed (tier 1..11). */
+/** Tier-size growth per game design doc §3 (revised 2026-10-10 from the reference video):
+ *  tiers 1-7 grow by TIER_GROWTH_LOW per step (measured), tiers 8-11 by TIER_GROWTH_HIGH so
+ *  the apex stays about half the board wide and reachable. */
+export const TIER_BASE_RADIUS_PX = 14;
+export const TIER_GROWTH_LOW = 1.264;
+export const TIER_GROWTH_HIGH = 1.17;
+/** Last tier on the measured (low-tier) curve. */
+export const TIER_GROWTH_KNEE = 7;
+
+/** r(n) = 14 × 1.264^(n−1) for n ≤ 7, then r(7) × 1.17^(n−7). n is 1-indexed (tier 1..11). */
 export function tierRadiusPx(tier: number): number {
   if (tier < 1 || tier > TIER_COUNT) {
     throw new Error(`tierRadiusPx: tier ${tier} out of range 1..${TIER_COUNT}`);
   }
-  return 14 * Math.pow(1.22, tier - 1);
+  const low = Math.min(tier, TIER_GROWTH_KNEE) - 1;
+  const high = Math.max(0, tier - TIER_GROWTH_KNEE);
+  return TIER_BASE_RADIUS_PX * Math.pow(TIER_GROWTH_LOW, low) * Math.pow(TIER_GROWTH_HIGH, high);
 }
 
 export type RimStyle = 'solid' | 'dashed' | 'double';

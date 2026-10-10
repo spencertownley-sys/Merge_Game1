@@ -4,41 +4,52 @@
 // hardcoding any of these numbers elsewhere.
 
 export const PHYSICS = {
-  /** Logical board size in px. 100 px = 1 m. */
+  /** Logical board size in px. 100 px = 1 m. Revised 2026-10-10 (game design §2): the
+   *  play box under the rim is 400 × 442 (aspect ≈ 0.9, measured from the reference video),
+   *  plus the 78 px hanging zone above the rim where the held ball waits. */
   boardWidthPx: 400,
-  boardHeightPx: 600,
+  boardHeightPx: 520,
 
   /** Static wall colliders, outside the board, thick to prevent tunnelling. */
   wallThicknessPx: 40,
 
-  /** Ball spawns here, centered on pointer X. */
-  dropRailYPx: 44,
+  /** Ball spawns here, centered on pointer X. Low enough that the largest droppable tier
+   *  (tier 5) hangs fully inside the board, clear of the ceiling collider. */
+  dropRailYPx: 40,
 
-  /** Danger line — dashed, always visible. */
-  dangerLineYPx: 110,
+  /** Danger line: the rim of the glass box. The held ball hangs just above it, and a pile that
+   *  rises over it for too long ends the run (§7). Always visible as the rim itself. */
+  dangerLineYPx: 78,
 
-  /** m/s^2, downward. Starting value, tune by feel. */
-  gravity: 14,
+  /** m/s^2, downward. Revised 2026-10-10: measured from the reference video (constant
+   *  acceleration of 1.94 box-widths/s², no visible drag), so a drop falls the full box in
+   *  about 1.08 s. */
+  gravity: 7.8,
 
   density: 1.0,
 
-  restitutionBallBall: 0.12,
-  restitutionBallWall: 0.12,
+  /** A landing hops about 8% of its drop height, as in the reference. Walls use the Min
+   *  combine rule, so both values must move together for the wall bounce to change. */
+  restitutionBallBall: 0.3,
+  restitutionBallWall: 0.3,
 
-  frictionBallBall: 0.35,
-  frictionBallWall: 0.2,
+  frictionBallBall: 0.45,
+  frictionBallWall: 0.4,
 
-  linearDamping: 0.15,
-  angularDamping: 0.4,
+  /** Next to no drag in the air (the reference falls at constant acceleration); rolling
+   *  speed fades mostly through spin damping, about 30% per second on a flat floor. */
+  linearDamping: 0.02,
+  angularDamping: 0.9,
 
-  /** m/s. Prevents tunnelling; CCD also on. */
-  maxSpeedClamp: 14,
+  /** m/s. Above the natural top speed of a full-height fall (~8.5 m/s). Prevents
+   *  tunnelling; CCD also on. */
+  maxSpeedClamp: 12,
 
   /** Fixed timestep in seconds. Two physics steps per 60fps frame. Required for determinism. */
   fixedTimestepSec: 1 / 120,
 
-  /** ms between drop releases. */
-  dropCooldownMs: 450,
+  /** ms between drop releases. The reference has the next ball in hand ~0.25 s after a drop. */
+  dropCooldownMs: 300,
 
   /** Soft budget — board area makes this hard to exceed in practice. */
   maxLiveBallsSoft: 80,
