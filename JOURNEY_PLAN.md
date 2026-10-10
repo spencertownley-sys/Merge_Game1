@@ -108,49 +108,49 @@ Levels 1–10 exist today (level 10 was rebalanced to 100 drops for the new boar
 are new. "New code" marks the four mechanics that need engine work (§2.4); everything else uses
 goal types, obstacles and hazards the engine already supports.
 
-| #   | Land               | Level name (draft)  | Goal                             | Constraint                            | Teaches / note                |
-| --- | ------------------ | ------------------- | -------------------------------- | ------------------------------------- | ----------------------------- |
-| 1   | Sunmeadow Hollow   | First Light         | Reach tier 4                     | none                                  | Drop and merge (exists)       |
-| 2   | Sunmeadow Hollow   | The Windmill Path   | Reach tier 5                     | none                                  | Planning (exists)             |
-| 3   | Sunmeadow Hollow   | Wildflower Fields   | Score 150                        | none                                  | Scoring (exists)              |
-| 4   | Sunmeadow Hollow   | Lantern Evening     | Make 6 tier-3 motes              | none                                  | Specific targets (exists)     |
-| 5   | Driftmoor Cove     | Fog on the Water    | Reach tier 6                     | 40 drops                              | Efficiency (exists)           |
-| 6   | Driftmoor Cove     | Morning Chill       | Free 4 ice motes                 | 35 drops                              | Thawing (exists)              |
-| 7   | Driftmoor Cove     | Lighthouse Watch    | Score 400                        | 60 s                                  | Speed (exists)                |
-| 8   | Whisperwood        | Fallen Logs         | Reach tier 5                     | 3 rocks                               | Rocks (exists)                |
-| 9   | Whisperwood        | Between the Trunks  | Reach tier 6                     | wind                                  | First breeze (exists)         |
-| 10  | Whisperwood        | Heart of the Wood   | Reach tier 8                     | 100 drops, 1 rock                     | **Boss** (exists, rebalanced) |
-| 11  | Thistledown Hills  | Kite Day            | Reach tier 6                     | gentle wind                           | Reading the wind              |
-| 12  | Thistledown Hills  | Gusts and Gaps      | Score 500                        | strong wind, 75 s                     | Timing drops between gusts    |
-| 13  | Thistledown Hills  | The High Meadow     | Reach tier 7                     | strong wind, 70 drops                 | **Boss**                      |
-| 14  | Copperleaf Orchard | Frost on the Apples | Free 3 ice motes                 | 2 rocks, 45 drops                     | Two obstacles at once         |
-| 15  | Copperleaf Orchard | Basket by Basket    | Make 5 tier-4 motes              | wind                                  | Targets under pressure        |
-| 16  | Copperleaf Orchard | Festival Eve        | Reach tier 8                     | ice + rock, 100 drops                 | **Boss**                      |
-| 17  | Mistvale Marsh     | Into the Reeds      | Reach tier 6                     | fog (no Next preview) — new code      | Playing without a preview     |
-| 18  | Mistvale Marsh     | Stepping Stones     | Free 6 ice motes in a tight row  | 50 drops                              | Deliberate obstacle layouts   |
-| 19  | Mistvale Marsh     | Firefly Hollow      | Score 900                        | fog + 3 rocks, 90 drops               | **Boss**                      |
-| 20  | Emberpeak          | Cold Forge          | Reach tier 7                     | 55 drops                              | A tight budget                |
-| 21  | Emberpeak          | Ember Rain          | Survive 90 s                     | bag weighted to tiers 4–5             | Big drops, little room        |
-| 22  | Emberpeak          | The Great Bellows   | Reach tier 8                     | 80 drops                              | **Boss**                      |
-| 23  | Cloudspire Isles   | Two Islands         | Reach tier 6                     | a pillar splits the box — new code    | Shaped boxes                  |
-| 24  | Cloudspire Isles   | Narrow Bridge       | Make 4 tier-5 motes              | a narrowed box — new code             | Stacking in tight spaces      |
-| 25  | Cloudspire Isles   | Sky Harbour         | Reach tier 8                     | pillars + wind, 100 drops             | **Boss**                      |
-| 26  | Frostglass Tundra  | Ice Field           | Free 8 ice motes                 | none                                  | Chains of thaws               |
-| 27  | Frostglass Tundra  | Glacier Gate        | Reach tier 7                     | 6 ice motes, 45 drops                 | Using ice as a floor          |
-| 28  | Frostglass Tundra  | The Frozen Heart    | Free 10 ice motes, some tier 5–6 | 90 drops                              | **Boss**                      |
-| 29  | Neonoko City       | Opening Night       | Make a ×4 combo — new code       | none                                  | Combos on purpose             |
-| 30  | Neonoko City       | Rush Hour           | Score 1,200                      | 90 s                                  | Speed and flourish            |
-| 31  | Neonoko City       | Lantern Parade      | Two ×5 combos and reach tier 8   | 110 drops                             | **Boss**                      |
-| 32  | Starlit Harbor     | Low Tide            | Reach tier 7                     | none                                  | Breather                      |
-| 33  | Starlit Harbor     | Boats at Rest       | Score 600                        | none                                  | Breather                      |
-| 34  | Starlit Harbor     | Dawn Bells          | Make 3 tier-6 motes              | none                                  | Breather, gentle mastery      |
-| 35  | Sunreach Spire     | The First Stair     | Reach tier 8                     | fog + wind, 100 drops                 | Combined pressure             |
-| 36  | Sunreach Spire     | Narrow Landing      | Free 5 ice motes                 | narrowed box, 60 drops                | Combined pressure             |
-| 37  | Sunreach Spire     | Racing the Sunrise  | Reach tier 9                     | 150 s                                 | Endurance                     |
-| 38  | Sunreach Spire     | The Top Room        | Reach tier 9                     | 3 rocks, 120 drops                    | **Boss**                      |
-| 39  | Skylight Sanctuary | Gathering           | Reach tier 9                     | none                                  | Everything, calmly            |
-| 40  | Skylight Sanctuary | Fragments           | Reach tier 10                    | 2 frozen tier-8 "fragments"           | Building on the past          |
-| 41  | Skylight Sanctuary | The Skylight        | Apex merge                       | 2 frozen tier-10 fragments, 150 drops | **Finale** (§2.3)             |
+| #   | Land               | Level name (draft)  | Goal                             | Constraint                            | Teaches / note                 |
+| --- | ------------------ | ------------------- | -------------------------------- | ------------------------------------- | ------------------------------ |
+| 1   | Sunmeadow Hollow   | First Light         | Reach tier 4                     | none                                  | Drop and merge (exists)        |
+| 2   | Sunmeadow Hollow   | The Windmill Path   | Reach tier 5                     | none                                  | Planning (exists)              |
+| 3   | Sunmeadow Hollow   | Wildflower Fields   | Score 150                        | none                                  | Scoring (exists)               |
+| 4   | Sunmeadow Hollow   | Lantern Evening     | Make 6 tier-3 motes              | none                                  | Specific targets (exists)      |
+| 5   | Driftmoor Cove     | Fog on the Water    | Reach tier 6                     | 40 drops                              | Efficiency (exists)            |
+| 6   | Driftmoor Cove     | Morning Chill       | Free 4 ice motes                 | 35 drops                              | Thawing (exists)               |
+| 7   | Driftmoor Cove     | Lighthouse Watch    | Score 400                        | 60 s                                  | Speed (exists)                 |
+| 8   | Whisperwood        | Fallen Logs         | Reach tier 5                     | 3 rocks                               | Rocks (exists)                 |
+| 9   | Whisperwood        | Between the Trunks  | Reach tier 6                     | wind                                  | First breeze (exists)          |
+| 10  | Whisperwood        | Heart of the Wood   | Reach tier 8                     | 100 drops, 1 rock                     | **Boss** (exists, rebalanced)  |
+| 11  | Thistledown Hills  | Kite Day            | Reach tier 6                     | gentle wind                           | Reading the wind (built)       |
+| 12  | Thistledown Hills  | Gusts and Gaps      | Score 500                        | strong wind, 70 s                     | Timing drops (built)           |
+| 13  | Thistledown Hills  | The High Meadow     | Reach tier 7                     | strong wind, 28 drops                 | **Boss** (built)               |
+| 14  | Copperleaf Orchard | Frost on the Apples | Free 3 ice motes                 | 2 rocks, 50 drops                     | Two obstacles at once (built)  |
+| 15  | Copperleaf Orchard | Basket by Basket    | Make 5 tier-4 motes              | wind, 31 drops                        | Targets under pressure (built) |
+| 16  | Copperleaf Orchard | Festival Eve        | Reach tier 8                     | 2 ice + rock, 90 drops                | **Boss** (built)               |
+| 17  | Mistvale Marsh     | Into the Reeds      | Reach tier 6                     | fog (no Next preview) — new code      | Playing without a preview      |
+| 18  | Mistvale Marsh     | Stepping Stones     | Free 6 ice motes in a tight row  | 50 drops                              | Deliberate obstacle layouts    |
+| 19  | Mistvale Marsh     | Firefly Hollow      | Score 900                        | fog + 3 rocks, 90 drops               | **Boss**                       |
+| 20  | Emberpeak          | Cold Forge          | Reach tier 7                     | 55 drops                              | A tight budget                 |
+| 21  | Emberpeak          | Ember Rain          | Survive 90 s                     | bag weighted to tiers 4–5             | Big drops, little room         |
+| 22  | Emberpeak          | The Great Bellows   | Reach tier 8                     | 80 drops                              | **Boss**                       |
+| 23  | Cloudspire Isles   | Two Islands         | Reach tier 6                     | a pillar splits the box — new code    | Shaped boxes                   |
+| 24  | Cloudspire Isles   | Narrow Bridge       | Make 4 tier-5 motes              | a narrowed box — new code             | Stacking in tight spaces       |
+| 25  | Cloudspire Isles   | Sky Harbour         | Reach tier 8                     | pillars + wind, 100 drops             | **Boss**                       |
+| 26  | Frostglass Tundra  | Ice Field           | Free 8 ice motes                 | none                                  | Chains of thaws                |
+| 27  | Frostglass Tundra  | Glacier Gate        | Reach tier 7                     | 6 ice motes, 45 drops                 | Using ice as a floor           |
+| 28  | Frostglass Tundra  | The Frozen Heart    | Free 10 ice motes, some tier 5–6 | 90 drops                              | **Boss**                       |
+| 29  | Neonoko City       | Opening Night       | Make a ×4 combo — new code       | none                                  | Combos on purpose              |
+| 30  | Neonoko City       | Rush Hour           | Score 1,200                      | 90 s                                  | Speed and flourish             |
+| 31  | Neonoko City       | Lantern Parade      | Two ×5 combos and reach tier 8   | 110 drops                             | **Boss**                       |
+| 32  | Starlit Harbor     | Low Tide            | Reach tier 7                     | none                                  | Breather                       |
+| 33  | Starlit Harbor     | Boats at Rest       | Score 600                        | none                                  | Breather                       |
+| 34  | Starlit Harbor     | Dawn Bells          | Make 3 tier-6 motes              | none                                  | Breather, gentle mastery       |
+| 35  | Sunreach Spire     | The First Stair     | Reach tier 8                     | fog + wind, 100 drops                 | Combined pressure              |
+| 36  | Sunreach Spire     | Narrow Landing      | Free 5 ice motes                 | narrowed box, 60 drops                | Combined pressure              |
+| 37  | Sunreach Spire     | Racing the Sunrise  | Reach tier 9                     | 150 s                                 | Endurance                      |
+| 38  | Sunreach Spire     | The Top Room        | Reach tier 9                     | 3 rocks, 120 drops                    | **Boss**                       |
+| 39  | Skylight Sanctuary | Gathering           | Reach tier 9                     | none                                  | Everything, calmly             |
+| 40  | Skylight Sanctuary | Fragments           | Reach tier 10                    | 2 frozen tier-8 "fragments"           | Building on the past           |
+| 41  | Skylight Sanctuary | The Skylight        | Apex merge                       | 2 frozen tier-10 fragments, 150 drops | **Finale** (§2.3)              |
 
 ### 2.3 Making the finale possible
 

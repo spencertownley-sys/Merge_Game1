@@ -7,9 +7,14 @@
 import { DEFAULT_TUNING, type PhysicsTuning } from './physics';
 import type { LandId } from '../types';
 
-export type ArtStyleId = 'gummy' | 'watercolor' | 'fruit';
+export type ArtStyleId = 'storybook' | 'gummy' | 'watercolor' | 'fruit';
 
 export const ART_STYLES: { id: ArtStyleId; name: string; blurb: string }[] = [
+  {
+    id: 'storybook',
+    name: 'Storybook (painted)',
+    blurb: 'The painted gummy motes generated with Higgsfield. The default look.',
+  },
   {
     id: 'gummy',
     name: 'Gummy glow',
@@ -100,15 +105,18 @@ export interface GameTuning {
   version: number;
 }
 
-/** 2 = the reference-matched defaults (2026-10-10). Saved tuning from an older version keeps
- *  its art overrides but takes the new physics and visual defaults, because the board and
- *  tier sizes changed under it. */
-export const TUNING_VERSION = 2;
+/** 2 = the reference-matched defaults (2026-10-10); 3 = the painted Storybook motes become the
+ *  default art style. Saved tuning from before version 2 keeps its art overrides but takes the
+ *  new physics and visual defaults, because the board and tier sizes changed under it. */
+export const TUNING_VERSION = 3;
+/** Version 3 only changed the default art style to the painted Storybook motes, so feel saved
+ *  under version 2 still applies. */
+const FEEL_COMPATIBLE_VERSIONS = new Set([2, 3]);
 
 export const DEFAULT_GAME_TUNING: GameTuning = {
   physics: { ...DEFAULT_TUNING },
   visual: { ...DEFAULT_VISUAL },
-  artStyle: 'gummy',
+  artStyle: 'storybook',
   art: { tierArt: {}, frameArt: {}, backgroundArt: {} },
   presetId: 'reference',
   version: TUNING_VERSION,
@@ -399,7 +407,7 @@ export function normalizeTuning(input: unknown): GameTuning {
   };
   // Feel saved under older defaults was tuned for a different board and tier sizes, so it
   // gives way to the current defaults; art choices carry over either way.
-  const current = raw.version === TUNING_VERSION;
+  const current = FEEL_COMPATIBLE_VERSIONS.has(raw.version as number);
   const physics = { ...DEFAULT_TUNING } as PhysicsTuning;
   for (const group of PHYSICS_FIELDS)
     for (const f of group.fields)
@@ -418,9 +426,13 @@ export function normalizeTuning(input: unknown): GameTuning {
         f.max,
         DEFAULT_VISUAL[f.key],
       );
-  const artStyle: ArtStyleId = ART_STYLES.some((s) => s.id === raw.artStyle)
-    ? (raw.artStyle as ArtStyleId)
-    : 'gummy';
+  // Before version 3 everyone was on the code-drawn gummy look by default; move them to the
+  // painted art unless they had picked one of the other styles on purpose.
+  const legacyDefault = (raw.version ?? 0) < TUNING_VERSION && raw.artStyle === 'gummy';
+  const artStyle: ArtStyleId =
+    !legacyDefault && ART_STYLES.some((s) => s.id === raw.artStyle)
+      ? (raw.artStyle as ArtStyleId)
+      : 'storybook';
   const art: ArtOverrides = { tierArt: {}, frameArt: {}, backgroundArt: {} };
   const rawArt = (raw.art ?? {}) as Partial<ArtOverrides>;
   for (let t = 1; t <= 11; t++) {

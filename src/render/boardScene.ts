@@ -8,6 +8,7 @@
 
 import {
   Assets,
+  ColorMatrixFilter,
   Container,
   FillGradient,
   Graphics,
@@ -73,6 +74,14 @@ interface LiveBall {
 interface DyingBall {
   view: BallView;
   startMs: number;
+}
+
+/** Greyed-out look for a land that has not been restored yet. */
+export function dimFilter(): ColorMatrixFilter {
+  const f = new ColorMatrixFilter();
+  f.desaturate();
+  f.brightness(1.04, true);
+  return f;
 }
 
 /** A render-only effect; `tick` returns false once it is finished and destroyed. */
@@ -254,6 +263,9 @@ export class BoardScene {
     this.frame.container.visible = this.frameVisible;
     if (this.frameVisible) this.frame.set(land, restored, this.opts.frameArtUrl);
     this.setBackgroundImage(this.opts.backgroundArtUrl);
+    // An unrestored land shows its painted art greyed out; restoring it brings the colour back
+    // (ART_AND_STORY_DIRECTION.md §4.2).
+    this.bgImageHolder.filters = restored ? [] : [dimFilter()];
   }
 
   private setBackgroundImage(url?: string): void {
@@ -266,9 +278,16 @@ export class BoardScene {
       .then((tex) => {
         if (this.bgImageUrl !== wanted) return;
         const s = new Sprite(tex);
-        s.width = BOARD_W;
-        s.height = BOARD_H;
-        this.bgImageHolder.addChild(s);
+        // cover the board, keeping the painting's proportions
+        const k = Math.max(BOARD_W / tex.width, BOARD_H / tex.height);
+        s.scale.set(k);
+        s.position.set((BOARD_W - tex.width * k) / 2, (BOARD_H - tex.height * k) / 2);
+        // a soft wash keeps the motes readable over the painting
+        const wash = new Graphics().rect(0, 0, BOARD_W, BOARD_H).fill({
+          color: '#fff8ee',
+          alpha: 0.32,
+        });
+        this.bgImageHolder.addChild(s, wash);
       })
       .catch((err) =>
         console.warn('Background art failed to load; using the palette backdrop.', err),
@@ -662,6 +681,7 @@ export class BoardScene {
     const sincePop = this.clockMs - live.popStartMs;
     if (!reduce && sincePop >= 0 && sincePop < ORIENTATION.coinFlipMs) yaw += coinFlipYaw(sincePop);
     live.view.setOrientation(buildRotationMatrix(displayAngle, yaw, pitch, live.rot));
+    live.view.setDisplayAngle(displayAngle);
     live.view.setPointerFacing(Math.sign(yaw));
 
     // §5.3 pop (or crossfade under reduce-motion)

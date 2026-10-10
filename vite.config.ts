@@ -51,7 +51,7 @@ export default defineConfig({
     shareMeta(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: ['favicon.png', 'icons/*.png'],
       manifest: {
         name: BRAND_NAME,
         short_name: BRAND_NAME,
@@ -74,7 +74,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,wasm,woff2}'],
+        // the painted art (public/assets/**/*.webp) is precached so the game plays offline
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,wasm,woff2}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // Rapier's embedded wasm makes the worker chunk large
       },
     }),

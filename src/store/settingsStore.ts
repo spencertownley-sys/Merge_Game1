@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: Settings = {
   reduceMotion: false,
   simpleGraphics: false,
   showTierNumbers: false,
+  introSeen: false,
 };
 
 interface SettingsState extends Settings {

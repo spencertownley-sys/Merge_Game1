@@ -61,3 +61,41 @@ body {
 .card {
   @apply rounded-[16px] bg-paper/95 shadow-xl ring-1 ring-ink/5 backdrop-blur;
 }
+
+/* Journey intro story: a slow push-in on each painted panel (skipped under reduce motion). */
+@keyframes story-drift {
+  from {
+    transform: scale(1.02) translateY(0);
+  }
+  to {
+    transform: scale(1.1) translateY(-1.5%);
+  }
+}
+.story-drift {
+  animation: story-drift 7s ease-out forwards;
+}
+@keyframes story-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.story-rise {
+  animation: story-rise 600ms ease-out 250ms both;
+}
+@keyframes wick-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(3deg);
+  }
+}
+.wick-bob {
+  animation: wick-bob 3.2s ease-in-out infinite;
+}

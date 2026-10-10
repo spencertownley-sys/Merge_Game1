@@ -15,6 +15,9 @@ import {
 import { useUi } from '../store/uiStore';
 import { LevelIntro } from './LevelIntro';
 import type { LevelDef } from '../types';
+import { landBackdropUrl } from '../render/assetUrls';
+import { useSettings } from '../store/settingsStore';
+import { IntroCutscene } from './IntroCutscene';
 
 function StarsSmall({ stars }: { stars: number }) {
   return (
@@ -32,6 +35,13 @@ export function JourneyMap() {
   const navigate = useUi((s) => s.navigate);
   const { loaded, progress, load } = useJourney();
   const [intro, setIntro] = useState<LevelDef | null>(null);
+  const settingsReady = useSettings((s) => s.hydrated);
+  const introSeen = useSettings((s) => s.introSeen);
+  const reduceMotion = useSettings((s) => s.reduceMotion);
+  const setSetting = useSettings((s) => s.set);
+  const [replaying, setReplaying] = useState(false);
+  // The story plays by itself on the first visit only; the map button replays it.
+  const showStory = replaying || (settingsReady && !introSeen);
 
   useEffect(() => {
     if (!loaded) void load();
@@ -41,7 +51,7 @@ export function JourneyMap() {
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <button
           type="button"
@@ -60,6 +70,14 @@ export function JourneyMap() {
         </span>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8" data-testid="journey-map">
+        <button
+          type="button"
+          className="btn-ghost mt-1 w-full text-base"
+          onClick={() => setReplaying(true)}
+          data-testid="watch-story"
+        >
+          ▶ Watch the story
+        </button>
         {!loaded && <div className="card mt-4 h-40 animate-pulse" aria-busy />}
         {loaded &&
           LANDS.map((land, landIdx) => {
@@ -73,10 +91,27 @@ export function JourneyMap() {
             return (
               <section key={land.id} className="mt-4" aria-labelledby={`land-${land.id}`}>
                 <div
-                  className="card overflow-hidden"
+                  className="card relative overflow-hidden"
                   style={{ background: `linear-gradient(180deg, ${sky[0]} 0%, ${sky[1]} 100%)` }}
                 >
-                  <div className="px-4 pt-3 pb-2">
+                  {/* the land's painted backdrop, greyed out until the land is restored */}
+                  <img
+                    src={landBackdropUrl(land.id)}
+                    alt=""
+                    aria-hidden
+                    loading="lazy"
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full object-cover"
+                    style={{
+                      objectPosition: 'center 62%',
+                      filter: restored ? 'none' : 'grayscale(1) brightness(1.05)',
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/45 to-white/15"
+                    aria-hidden
+                  />
+                  <div className="relative px-4 pt-3 pb-2">
                     <div className="flex items-baseline justify-between">
                       <h2
                         id={`land-${land.id}`}
@@ -90,7 +125,7 @@ export function JourneyMap() {
                     </div>
                     <p className="text-xs text-ink-soft">{restored ? land.restored : land.blurb}</p>
                   </div>
-                  <div className="flex flex-wrap gap-3 px-4 pb-4">
+                  <div className="relative flex flex-wrap gap-3 px-4 pb-4">
                     {comingSoon && (
                       <span className="text-sm text-ink-soft italic">
                         More light to gather soon.
@@ -125,6 +160,15 @@ export function JourneyMap() {
             );
           })}
       </div>
+      {showStory && (
+        <IntroCutscene
+          reduceMotion={reduceMotion}
+          onDone={() => {
+            setReplaying(false);
+            if (!introSeen) setSetting('introSeen', true);
+          }}
+        />
+      )}
       {intro && (
         <LevelIntro
           level={intro}

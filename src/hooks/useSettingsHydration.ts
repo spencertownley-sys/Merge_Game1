@@ -42,6 +42,7 @@ export function useSettingsHydration(): void {
         'reduceMotion',
         'simpleGraphics',
         'showTierNumbers',
+        'introSeen',
       ];
       for (const k of keys) {
         if (state[k] !== prev[k]) {

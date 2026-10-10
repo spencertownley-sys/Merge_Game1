@@ -1,4 +1,4 @@
-// Journey levels for the first three lands, authored from the §10.5 design-intent table and
+// Journey levels for the first five lands, authored from the §10.5 design-intent table and
 // mapped onto the story beats in ART_AND_STORY_DIRECTION.md §4.3. Further lands are content
 // to add over time — nothing here caps the count. Seeds are fixed per level so a level plays
 // the same drop sequence every attempt (fair retries).
@@ -125,7 +125,100 @@ const whisperwood: LevelDef[] = [
   },
 ];
 
-export const LEVELS: readonly LevelDef[] = [...sunmeadow, ...driftmoor, ...whisperwood];
+// Wave 1 of JOURNEY_PLAN.md: lands 4 and 5. Balanced 2026-10-10 against a simulated player
+// (aims at a matching mote 70% of the time, drops every 0.6 s, or every 1 s on timed levels)
+// over 40 attempts each: the intro levels pass ~85-100%, the practice levels ~60-65%,
+// the bosses ~45-55%. The bosses' drop budgets are much tighter than the plan's first draft
+// because the reference-matched board reaches mid tiers in fewer drops.
+const thistledown: LevelDef[] = [
+  {
+    id: 11,
+    land: 'thistledown-hills',
+    name: 'Kite Day',
+    seed: 1411,
+    goals: [{ type: 'reachTier', tier: 6 }],
+    hazards: { wind: { everySec: 7, durationSec: 2, force: 5 } },
+    stars: { two: { scoreAtLeast: 55 }, three: { scoreAtLeast: 80 } },
+    flavor: "Hold on to your glow. It's breezy up here. Let the gusts settle before you drop.",
+  },
+  {
+    id: 12,
+    land: 'thistledown-hills',
+    name: 'Gusts and Gaps',
+    seed: 1412,
+    goals: [{ type: 'score', score: 500 }],
+    timeLimitSec: 70,
+    hazards: { wind: { everySec: 6, durationSec: 2.5, force: 9 } },
+    stars: starsForTimeBudget(70),
+    flavor: 'The wind comes in waves. Drop in the quiet between them, and drop fast.',
+  },
+  {
+    id: 13,
+    land: 'thistledown-hills',
+    name: 'The High Meadow',
+    seed: 1413,
+    goals: [{ type: 'reachTier', tier: 7 }],
+    dropLimit: 28,
+    hazards: { wind: { everySec: 6, durationSec: 2.5, force: 9 } },
+    stars: { two: { dropsRemainingAtLeast: 2 }, three: { dropsRemainingAtLeast: 4 } },
+    flavor: 'The kites are tangled in the grey up here. A Snowglobe Charm would shake them loose.',
+  },
+];
+
+const copperleaf: LevelDef[] = [
+  {
+    id: 14,
+    land: 'copperleaf-orchard',
+    name: 'Frost on the Apples',
+    seed: 1514,
+    goals: [{ type: 'clearObstacle', obstacle: 'ice', count: 3 }],
+    dropLimit: 50,
+    obstacles: [
+      { type: 'ice', x: 50, y: 480, tier: 3 },
+      { type: 'rock', x: 128, y: 480 },
+      { type: 'ice', x: 200, y: 480, tier: 2 },
+      { type: 'rock', x: 272, y: 480 },
+      { type: 'ice', x: 350, y: 480, tier: 3 },
+    ],
+    stars: starsForDropBudget(50),
+    flavor: "Ice and stones? Someone's testing us. Thaw the frosted motes between the rocks.",
+  },
+  {
+    id: 15,
+    land: 'copperleaf-orchard',
+    name: 'Basket by Basket',
+    seed: 1515,
+    goals: [{ type: 'mergeCount', tier: 4, count: 5 }],
+    dropLimit: 31,
+    hazards: { wind: { everySec: 7, durationSec: 2, force: 6 } },
+    stars: { two: { dropsRemainingAtLeast: 4 }, three: { dropsRemainingAtLeast: 6 } },
+    flavor: 'Five baskets for the festival tables. Fill them before the leaves blow away.',
+  },
+  {
+    id: 16,
+    land: 'copperleaf-orchard',
+    name: 'Festival Eve',
+    seed: 1516,
+    goals: [{ type: 'reachTier', tier: 8 }],
+    dropLimit: 90,
+    obstacles: [
+      { type: 'ice', x: 60, y: 480, tier: 3 },
+      { type: 'rock', x: 200, y: 480 },
+      { type: 'ice', x: 340, y: 480, tier: 3 },
+    ],
+    stars: starsForDropBudget(90),
+    flavor:
+      'The banners are ready and the lanterns are strung. One bright Cloud Balloon starts the festival.',
+  },
+];
+
+export const LEVELS: readonly LevelDef[] = [
+  ...sunmeadow,
+  ...driftmoor,
+  ...whisperwood,
+  ...thistledown,
+  ...copperleaf,
+];
 
 export function levelById(id: number): LevelDef | undefined {
   return LEVELS.find((l) => l.id === id);

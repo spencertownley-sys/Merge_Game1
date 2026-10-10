@@ -2,27 +2,25 @@
 // the reference video. The danger line is the glass rim, drawn on the canvas (boardScene.ts).
 
 import type { ReactNode } from 'react';
-import { TIER_COUNT, tierDef } from '../config/tiers';
+import { TIER_COUNT } from '../config/tiers';
+import { moteArtUrl } from '../render/assetUrls';
 import { tierName } from '../render/coreArt';
 import { useGameStore } from '../store/gameStore';
 
+/** A tier's painted mote (Higgsfield art), sized for the HUD. */
 function TierChip({ tier, size = 36 }: { tier: number; size?: number }) {
   if (tier <= 0) return <span style={{ width: size, height: size }} className="inline-block" />;
-  const def = tierDef(tier);
   return (
-    <span
-      aria-label={tierName(tier)}
+    <img
+      src={moteArtUrl(tier)}
+      alt={tierName(tier)}
       title={tierName(tier)}
-      className="inline-flex items-center justify-center rounded-full font-display text-sm font-bold text-white shadow-inner"
-      style={{
-        width: size,
-        height: size,
-        background: `radial-gradient(circle at 35% 30%, #fff8 0%, ${def.rimColor} 55%, ${def.rimColor} 100%)`,
-        boxShadow: `0 2px 8px ${def.rimColor}66, inset 0 0 0 2px #ffffff88`,
-      }}
-    >
-      {tier}
-    </span>
+      width={size}
+      height={size}
+      draggable={false}
+      className="inline-block shrink-0 select-none"
+      style={{ width: size, height: size, filter: 'drop-shadow(0 2px 3px rgb(43 38 34 / 0.18))' }}
+    />
   );
 }
 
