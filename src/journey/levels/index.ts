@@ -1,4 +1,4 @@
-// Journey levels for the first nine lands, authored from the §10.5 design-intent table and
+// Journey levels for the first eleven lands, authored from the §10.5 design-intent table and
 // mapped onto the story beats in ART_AND_STORY_DIRECTION.md §4.3. Further lands are content
 // to add over time — nothing here caps the count. Seeds are fixed per level so a level plays
 // the same drop sequence every attempt (fair retries).
@@ -413,6 +413,78 @@ const frostglass: LevelDef[] = [
   },
 ];
 
+// Wave 3, part 1: lands 10 and 11 (Act III, "The Night Market"). Neonoko City brings the combo
+// goal (JOURNEY_PLAN.md §2.4); Starlit Harbor is a breather with generous or no budgets.
+// Balanced 2026-10-10 with the simulated player over 40 attempts each (combo levels also at
+// one drop a second): Opening Night 100%, Rush Hour ~70% at one drop a second, Lantern Parade
+// ~50%, and the three harbor levels 100%.
+const neonoko: LevelDef[] = [
+  {
+    id: 29,
+    land: 'neonoko-city',
+    name: 'Opening Night',
+    seed: 2029,
+    goals: [{ type: 'combo', combo: 4 }],
+    dropLimit: 40,
+    stars: { two: { dropsRemainingAtLeast: 24 }, three: { dropsRemainingAtLeast: 28 } },
+    flavor: 'They say this city loves a show! Merge again and again, quickly, for a ×4 combo.',
+  },
+  {
+    id: 30,
+    land: 'neonoko-city',
+    name: 'Rush Hour',
+    seed: 2030,
+    goals: [{ type: 'score', score: 620 }],
+    timeLimitSec: 90,
+    stars: starsForTimeBudget(90),
+    flavor: 'The market is opening and everyone is hurrying. Keep the merges coming to keep up.',
+  },
+  {
+    id: 31,
+    land: 'neonoko-city',
+    name: 'Lantern Parade',
+    seed: 2031,
+    goals: [
+      { type: 'combo', combo: 5, times: 2 },
+      { type: 'reachTier', tier: 8 },
+    ],
+    dropLimit: 80,
+    stars: starsForDropBudget(80),
+    flavor: 'The parade needs two dazzling ×5 combos and a Cloud Balloon to lead it.',
+  },
+];
+
+const starlit: LevelDef[] = [
+  {
+    id: 32,
+    land: 'starlit-harbor',
+    name: 'Low Tide',
+    seed: 2132,
+    goals: [{ type: 'reachTier', tier: 7 }],
+    stars: { two: { scoreAtLeast: 300 }, three: { scoreAtLeast: 360 } },
+    flavor: "Let's rest a moment. You've earned it. No limits here, just the tide going out.",
+  },
+  {
+    id: 33,
+    land: 'starlit-harbor',
+    name: 'Boats at Rest',
+    seed: 2133,
+    goals: [{ type: 'score', score: 600 }],
+    dropLimit: 120,
+    stars: { two: { dropsRemainingAtLeast: 40 }, three: { dropsRemainingAtLeast: 50 } },
+    flavor: 'The boats sway gently at the pier. Plenty of drops, and plenty of time.',
+  },
+  {
+    id: 34,
+    land: 'starlit-harbor',
+    name: 'Dawn Bells',
+    seed: 2134,
+    goals: [{ type: 'mergeCount', tier: 6, count: 3 }],
+    stars: { two: { scoreAtLeast: 230 }, three: { scoreAtLeast: 290 } },
+    flavor: 'Three Bloom Orbs to ring the harbor bells as the sun comes up.',
+  },
+];
+
 export const LEVELS: readonly LevelDef[] = [
   ...sunmeadow,
   ...driftmoor,
@@ -423,6 +495,8 @@ export const LEVELS: readonly LevelDef[] = [
   ...emberpeak,
   ...cloudspire,
   ...frostglass,
+  ...neonoko,
+  ...starlit,
 ];
 
 export function levelById(id: number): LevelDef | undefined {

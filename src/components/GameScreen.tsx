@@ -230,7 +230,7 @@ export function GameScreen(props: GameScreenProps) {
       <HUDTop fog={level?.previewCount === 0}>
         <button
           type="button"
-          className="btn-ghost min-w-11 px-3 text-xl"
+          className="btn min-w-11 bg-white/80 px-3 text-xl text-ink-soft shadow-sm hover:bg-white"
           onClick={pause}
           aria-label="Pause"
           disabled={runEnded || paused}
@@ -250,7 +250,7 @@ export function GameScreen(props: GameScreenProps) {
           {levelStatus.goals.map((g, i) => (
             <span
               key={i}
-              className={`rounded-full px-3 py-1 ${g.done ? 'bg-gold/30 text-ink' : 'bg-ink/5 text-ink-soft'}`}
+              className={`rounded-full px-3 py-1 ${g.done ? 'bg-gold/80 text-ink' : 'bg-white/85 text-ink-soft'} shadow-sm`}
             >
               {g.done ? '✓ ' : ''}
               {g.label}
@@ -259,14 +259,14 @@ export function GameScreen(props: GameScreenProps) {
           ))}
           {levelStatus.dropsRemaining !== null && (
             <span
-              className={`ml-auto rounded-full px-3 py-1 tabular-nums ${levelStatus.dropsRemaining <= 5 ? 'bg-coral/20 text-coral' : 'bg-ink/5 text-ink-soft'}`}
+              className={`ml-auto rounded-full px-3 py-1 tabular-nums ${levelStatus.dropsRemaining <= 5 ? 'bg-white/90 text-coral-deep' : 'bg-white/85 text-ink-soft'}`}
             >
               ⬇ {levelStatus.dropsRemaining}
             </span>
           )}
           {levelStatus.secondsRemaining !== null && (
             <span
-              className={`ml-auto rounded-full px-3 py-1 tabular-nums ${levelStatus.secondsRemaining <= 10 ? 'bg-coral/20 text-coral' : 'bg-ink/5 text-ink-soft'}`}
+              className={`ml-auto rounded-full px-3 py-1 tabular-nums ${levelStatus.secondsRemaining <= 10 ? 'bg-white/90 text-coral-deep' : 'bg-white/85 text-ink-soft'}`}
             >
               ⏱ {Math.ceil(levelStatus.secondsRemaining)}s
             </span>

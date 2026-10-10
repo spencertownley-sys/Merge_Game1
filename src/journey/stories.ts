@@ -123,4 +123,42 @@ export const LAND_STORIES: Partial<Record<LandId, LandStory>> = {
       },
     ],
   },
+  'neonoko-city': {
+    finishLabel: 'Start the festival',
+    panels: [
+      {
+        image: landStoryPanelUrl('neonoko-city', 1),
+        text: 'Neonoko City should be the brightest night market in all the lands. Tonight every lantern hangs dark, and the stalls are shut.',
+      },
+      {
+        image: landStoryPanelUrl('neonoko-city', 2),
+        speaker: 'wick',
+        text: "They say this city loves a show! Make merge after merge, one right after another. That's a combo, and the bigger it gets, the brighter it shines.",
+      },
+      {
+        image: landStoryPanelUrl('neonoko-city', 3),
+        speaker: 'wick',
+        text: "A festival for the light coming home! Look, every family hangs a little lantern of its own, all around the Skylight's. A piece of it in every home…",
+      },
+    ],
+  },
+  'starlit-harbor': {
+    finishLabel: 'Rest a while',
+    panels: [
+      {
+        image: landStoryPanelUrl('starlit-harbor', 1),
+        text: 'After the festival, the road winds down to Starlit Harbor. The boats are resting, and the water lies still and dim before dawn.',
+      },
+      {
+        image: landStoryPanelUrl('starlit-harbor', 2),
+        speaker: 'wick',
+        text: "Let's rest a moment. You've earned it. No rush here and nothing in the way, just steady merges while the sun comes up.",
+      },
+      {
+        image: landStoryPanelUrl('starlit-harbor', 3),
+        speaker: 'wick',
+        text: "There it is, across the water: Sunreach Spire. Whatever happened to the Skylight happened up there. When you're ready, we'll climb.",
+      },
+    ],
+  },
 };

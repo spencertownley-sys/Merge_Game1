@@ -47,11 +47,11 @@ Steps 1-8 of the `CLAUDE.md` build plan are implemented:
   Higgsfield and stored in `public/assets/` (`src/render/assetUrls.ts`). The older
   code-drawn styles stay available as alternates on the Admin screen.
 - **Classic mode** — drag/release input with a ghost guide, HUD, pause, results, best score.
-- **Journey mode** — 28 levels across the first nine lands, Sunmeadow Hollow through
-  Frostglass Tundra (rock / ice / wind / fog / glass pillars and narrowed boxes, drop and time
-  limits, stars), a six-panel intro story with Wick on the first visit (replayable from the
-  map), short painted arrival stories for lands 6–9 that explain what's new and move the
-  mystery along, a scrolling
+- **Journey mode** — 34 levels across the first eleven lands, Sunmeadow Hollow through
+  Starlit Harbor (rock / ice / wind / fog / glass pillars and narrowed boxes / combo goals,
+  drop and time limits, stars), a six-panel intro story with Wick on the first visit
+  (replayable from the map), short painted arrival stories for lands 6–11 that explain what's
+  new and move the mystery along, a scrolling
   land map with painted backdrops that regain colour when a land is restored, and a level
   intro card. See `JOURNEY_PLAN.md` for the remaining lands.
 - **Share card** — 1080×1350 canvas PNG via the Web Share API with a download fallback.

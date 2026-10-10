@@ -108,6 +108,8 @@ describe('land arrival stories', () => {
       'emberpeak',
       'frostglass-tundra',
       'mistvale-marsh',
+      'neonoko-city',
+      'starlit-harbor',
     ]);
     for (const [land, story] of Object.entries(LAND_STORIES)) {
       expect(story.panels.length, land).toBeGreaterThanOrEqual(2);
