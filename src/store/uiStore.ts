@@ -5,7 +5,8 @@ import { create } from 'zustand';
 export type Screen =
   | { name: 'home' }
   | { name: 'classic'; seed: number; runKey: number }
-  | { name: 'journey' }
+  /** `story` opens the map with the intro story playing (the ?story=1 share link). */
+  | { name: 'journey'; story?: boolean }
   | { name: 'level'; levelId: number; runKey: number }
   | { name: 'settings'; from: Screen }
   | { name: 'admin' };

@@ -31,7 +31,12 @@ function StarsSmall({ stars }: { stars: number }) {
   );
 }
 
-export function JourneyMap() {
+export interface JourneyMapProps {
+  /** Open with the intro story playing, whether or not it has been seen. */
+  playStory?: boolean;
+}
+
+export function JourneyMap({ playStory = false }: JourneyMapProps) {
   const navigate = useUi((s) => s.navigate);
   const { loaded, progress, load } = useJourney();
   const [intro, setIntro] = useState<LevelDef | null>(null);
@@ -39,7 +44,7 @@ export function JourneyMap() {
   const introSeen = useSettings((s) => s.introSeen);
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const setSetting = useSettings((s) => s.set);
-  const [replaying, setReplaying] = useState(false);
+  const [replaying, setReplaying] = useState(playStory);
   // The story plays by itself on the first visit only; the map button replays it.
   const showStory = replaying || (settingsReady && !introSeen);
 
@@ -165,6 +170,12 @@ export function JourneyMap() {
           reduceMotion={reduceMotion}
           onDone={() => {
             setReplaying(false);
+            // Drop ?story=1 so a reload after the story lands on the map, not the story again.
+            if (new URLSearchParams(location.search).has('story')) {
+              const url = new URL(location.href);
+              url.searchParams.delete('story');
+              history.replaceState(history.state, '', url);
+            }
             if (!introSeen) setSetting('introSeen', true);
           }}
         />

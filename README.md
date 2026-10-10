@@ -8,7 +8,8 @@ merge into bigger, brighter tiers, restoring color to a series of story "lands" 
 
 **▶ [Play in your browser](https://spencertownley-sys.github.io/Merge_Game1/)**. It works on phones
 and desktops, and you can install it to your home screen ("Add to Home Screen" / "Install app")
-to play offline.
+to play offline. **[Watch the story](https://spencertownley-sys.github.io/Merge_Game1/?story=1)**
+opens straight into the Journey's painted intro.
 
 - **How to play:** drag along the top of the glass box to aim, then let go to drop the waiting
   mote. Two matching motes that touch merge into the next, brighter tier. Chain merges for combos.
