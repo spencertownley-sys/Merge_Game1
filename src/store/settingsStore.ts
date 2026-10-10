@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   simpleGraphics: false,
   showTierNumbers: false,
   introSeen: false,
+  landStoriesSeen: [],
 };
 
 interface SettingsState extends Settings {

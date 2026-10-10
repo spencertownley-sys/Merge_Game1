@@ -58,6 +58,8 @@ export interface BoardSceneOptions {
   backgroundArtUrl?: string;
   /** Hide the decorative frame (e.g. for the admin preview). */
   showFrame?: boolean;
+  /** Fog levels (previewCount 0): soft mist drifts over the hanging zone. */
+  fog?: boolean;
 }
 
 interface LiveBall {
@@ -142,6 +144,7 @@ export class BoardScene {
   private readonly ghost = new Graphics();
   private readonly ballLayer = new Container();
   private readonly fxLayer = new Container();
+  private readonly fogLayer = new Container();
   private readonly textLayer = new Container();
   private readonly effects: Effect[] = [];
   private readonly balls = new Map<number, LiveBall>();
@@ -179,6 +182,7 @@ export class BoardScene {
       this.ghost,
       this.ballLayer,
       this.fxLayer,
+      this.fogLayer,
       this.dangerLine,
       this.textLayer,
     );
@@ -190,6 +194,7 @@ export class BoardScene {
     this.drawFrameEdge();
     this.drawGlass();
     this.drawDangerLine(false, 1);
+    this.buildFog();
     app.stage.addChild(this.root);
   }
 
@@ -316,10 +321,46 @@ export class BoardScene {
     ) {
       this.applyLook();
     }
+    if (opts.fog !== undefined) this.fogLayer.visible = !!opts.fog;
     if (opts.showFrame !== undefined && opts.showFrame !== prev.showFrame) {
       const host = this.app.canvas;
       this.resize(host.clientWidth || host.width, host.clientHeight || host.height);
     }
+  }
+
+  /** Mist over the hanging zone for fog levels: soft overlapping wisps, thick enough to feel
+   *  like a marsh fog but thin enough that the held mote and the rim stay readable. */
+  private buildFog(): void {
+    const wisps = [
+      { x: 60, y: 30, rx: 110, ry: 34 },
+      { x: 220, y: 18, rx: 140, ry: 30 },
+      { x: 360, y: 40, rx: 120, ry: 36 },
+      { x: 140, y: 74, rx: 130, ry: 26 },
+      { x: 300, y: 86, rx: 120, ry: 24 },
+    ];
+    for (const w of wisps) {
+      const g = new Graphics();
+      // Concentric fills fake a soft edge without a blur filter.
+      for (let k = 4; k >= 1; k--) {
+        const f = k / 4;
+        g.ellipse(0, 0, w.rx * (0.55 + 0.45 * f), w.ry * (0.55 + 0.45 * f)).fill({
+          color: 0xe6f0ee,
+          alpha: 0.13,
+        });
+      }
+      g.position.set(w.x, w.y);
+      this.fogLayer.addChild(g);
+    }
+    this.fogLayer.visible = !!this.opts.fog;
+  }
+
+  private updateFog(): void {
+    if (!this.fogLayer.visible || this.opts.reduceMotion) return;
+    const t = this.clockMs / 1000;
+    this.fogLayer.children.forEach((g, i) => {
+      g.x += Math.sin(t * 0.35 + i * 1.7) * 0.12;
+      g.alpha = 0.85 + 0.15 * Math.sin(t * 0.5 + i);
+    });
   }
 
   /** Throws away every ball view so the next update rebuilds them with the current art. */
@@ -592,6 +633,7 @@ export class BoardScene {
     for (let i = this.effects.length - 1; i >= 0; i--)
       if (!this.effects[i].tick(this.clockMs)) this.effects.splice(i, 1);
     if (artGeneration() !== this.artGen) this.rebuildViews(); // custom art finished loading / style changed
+    this.updateFog();
     const snap = this.snapshot;
     if (!snap) return;
 

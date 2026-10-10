@@ -227,7 +227,7 @@ export function GameScreen(props: GameScreenProps) {
       className="relative flex h-full w-full flex-col"
       style={{ background: `linear-gradient(180deg, ${sky.skyTop} 0%, ${sky.skyBottom} 100%)` }}
     >
-      <HUDTop>
+      <HUDTop fog={level?.previewCount === 0}>
         <button
           type="button"
           className="btn-ghost min-w-11 px-3 text-xl"
@@ -289,6 +289,7 @@ export function GameScreen(props: GameScreenProps) {
             tierArt={artOverrides.tierArt}
             frameArtUrl={artOverrides.frameArt[landId] ?? landFrameUrl(landId)}
             backgroundArtUrl={artOverrides.backgroundArt[landId] ?? landBackdropUrl(landId)}
+            fog={level?.previewCount === 0}
             onReady={() => setStageReady(true)}
           />
         )}

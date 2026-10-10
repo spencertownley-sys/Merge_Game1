@@ -1,12 +1,14 @@
 // Screen navigation + toasts (UI_UX_NOTES.md §4: button-driven, no tab bar).
 
 import { create } from 'zustand';
+import type { LandId } from '../types';
 
 export type Screen =
   | { name: 'home' }
   | { name: 'classic'; seed: number; runKey: number }
-  /** `story` opens the map with the intro story playing (the ?story=1 share link). */
-  | { name: 'journey'; story?: boolean }
+  /** `story` opens the map with a story playing: `true` for the opening (?story=1), or a
+   *  land's id for its arrival story (?story=<land id>). */
+  | { name: 'journey'; story?: true | LandId }
   | { name: 'level'; levelId: number; runKey: number }
   | { name: 'settings'; from: Screen }
   | { name: 'admin' };

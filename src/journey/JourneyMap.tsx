@@ -3,7 +3,7 @@
 // Lands shift from their dim palette to full colour once restored (§4.2).
 
 import { useEffect, useState } from 'react';
-import { LANDS } from './lands';
+import { LANDS, landDef } from './lands';
 import { LEVELS, levelsForLand } from './levels';
 import { LAND_PALETTES } from '../render/palette';
 import {
@@ -14,10 +14,11 @@ import {
 } from '../store/journeyStore';
 import { useUi } from '../store/uiStore';
 import { LevelIntro } from './LevelIntro';
-import type { LevelDef } from '../types';
+import type { LandId, LevelDef } from '../types';
 import { landBackdropUrl } from '../render/assetUrls';
 import { useSettings } from '../store/settingsStore';
 import { IntroCutscene } from './IntroCutscene';
+import { LAND_STORIES } from './stories';
 
 function StarsSmall({ stars }: { stars: number }) {
   return (
@@ -32,11 +33,20 @@ function StarsSmall({ stars }: { stars: number }) {
 }
 
 export interface JourneyMapProps {
-  /** Open with the intro story playing, whether or not it has been seen. */
-  playStory?: boolean;
+  /** Open with a story playing, seen or not: `true` for the opening, or a land's id for that
+   *  land's arrival story (the ?story= share link). */
+  playStory?: true | LandId;
 }
 
-export function JourneyMap({ playStory = false }: JourneyMapProps) {
+/** Removes ?story= so a reload after a story lands on the map, not the story again. */
+function clearStoryParam(): void {
+  if (!new URLSearchParams(location.search).has('story')) return;
+  const url = new URL(location.href);
+  url.searchParams.delete('story');
+  history.replaceState(history.state, '', url);
+}
+
+export function JourneyMap({ playStory }: JourneyMapProps) {
   const navigate = useUi((s) => s.navigate);
   const { loaded, progress, load } = useJourney();
   const [intro, setIntro] = useState<LevelDef | null>(null);
@@ -44,13 +54,25 @@ export function JourneyMap({ playStory = false }: JourneyMapProps) {
   const introSeen = useSettings((s) => s.introSeen);
   const reduceMotion = useSettings((s) => s.reduceMotion);
   const setSetting = useSettings((s) => s.set);
-  const [replaying, setReplaying] = useState(playStory);
+  const landStoriesSeen = useSettings((s) => s.landStoriesSeen);
+  const [replaying, setReplaying] = useState(playStory === true);
+  // A land's arrival story, then (when it was opened by tapping a level) that level's card.
+  const [landStory, setLandStory] = useState<{ land: LandId; then?: LevelDef } | null>(
+    playStory && playStory !== true ? { land: playStory } : null,
+  );
   // The story plays by itself on the first visit only; the map button replays it.
   const showStory = replaying || (settingsReady && !introSeen);
 
   useEffect(() => {
     if (!loaded) void load();
   }, [loaded, load]);
+
+  // A land with an arrival story tells it before the first level card the player opens there.
+  const openLevel = (level: LevelDef) => {
+    if (LAND_STORIES[level.land] && !landStoriesSeen.includes(level.land))
+      setLandStory({ land: level.land, then: level });
+    else setIntro(level);
+  };
 
   const nextId = nextPlayableLevelId(progress);
   const totalStars = LEVELS.reduce((sum, l) => sum + (progress[l.id]?.stars ?? 0), 0);
@@ -124,9 +146,25 @@ export function JourneyMap({ playStory = false }: JourneyMapProps) {
                       >
                         {landIdx + 1}. {land.name}
                       </h2>
-                      {restored && (
-                        <span className="text-xs font-bold text-ink-soft uppercase">Restored</span>
-                      )}
+                      <span className="flex items-baseline gap-2">
+                        {restored && (
+                          <span className="text-xs font-bold text-ink-soft uppercase">
+                            Restored
+                          </span>
+                        )}
+                        {LAND_STORIES[land.id] &&
+                          levels[0] &&
+                          isLevelUnlocked(levels[0].id, progress) && (
+                            <button
+                              type="button"
+                              className="btn min-h-11 bg-white/70 px-3 py-1 text-sm text-ink-soft hover:bg-white"
+                              onClick={() => setLandStory({ land: land.id })}
+                              data-testid={`land-story-${land.id}`}
+                            >
+                              ▶ Story
+                            </button>
+                          )}
+                      </span>
                     </div>
                     <p className="text-xs text-ink-soft">{restored ? land.restored : land.blurb}</p>
                   </div>
@@ -145,7 +183,7 @@ export function JourneyMap({ playStory = false }: JourneyMapProps) {
                           key={level.id}
                           type="button"
                           disabled={!unlocked}
-                          onClick={() => setIntro(level)}
+                          onClick={() => openLevel(level)}
                           data-testid={`level-${level.id}`}
                           aria-label={`${level.name}${unlocked ? '' : ' (locked)'}`}
                           className={`flex min-h-16 min-w-16 flex-col items-center justify-center rounded-2xl px-2 py-1 font-display text-lg font-bold shadow transition ${
@@ -170,13 +208,25 @@ export function JourneyMap({ playStory = false }: JourneyMapProps) {
           reduceMotion={reduceMotion}
           onDone={() => {
             setReplaying(false);
-            // Drop ?story=1 so a reload after the story lands on the map, not the story again.
-            if (new URLSearchParams(location.search).has('story')) {
-              const url = new URL(location.href);
-              url.searchParams.delete('story');
-              history.replaceState(history.state, '', url);
-            }
+            clearStoryParam();
             if (!introSeen) setSetting('introSeen', true);
+          }}
+        />
+      )}
+      {!showStory && landStory && LAND_STORIES[landStory.land] && (
+        <IntroCutscene
+          key={landStory.land}
+          reduceMotion={reduceMotion}
+          panels={LAND_STORIES[landStory.land]!.panels}
+          finishLabel={LAND_STORIES[landStory.land]!.finishLabel}
+          label={`Arriving in ${landDef(landStory.land).name}`}
+          onDone={() => {
+            const { land, then } = landStory;
+            setLandStory(null);
+            clearStoryParam();
+            if (!landStoriesSeen.includes(land))
+              setSetting('landStoriesSeen', [...landStoriesSeen, land]);
+            if (then) setIntro(then);
           }}
         />
       )}

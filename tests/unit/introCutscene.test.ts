@@ -3,7 +3,10 @@ import { createElement } from 'react';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { INTRO_PANELS, IntroCutscene } from '../../src/journey/IntroCutscene';
+import { existsSync } from 'node:fs';
+import { IntroCutscene } from '../../src/journey/IntroCutscene';
+import { INTRO_PANELS, LAND_STORIES } from '../../src/journey/stories';
+import { levelsForLand } from '../../src/journey/levels';
 import { DEFAULT_SETTINGS } from '../../src/store/settingsStore';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -32,7 +35,9 @@ function mount(onDone: () => void, autoAdvanceMs = 0) {
 
 describe('IntroCutscene', () => {
   it('tells the story across six painted panels, with Wick speaking last', () => {
-    expect(INTRO_PANELS.map((p) => p.art)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(INTRO_PANELS.map((p) => p.image.split('/').pop())).toEqual(
+      [1, 2, 3, 4, 5, 6].map((n) => `intro-${n}.webp`),
+    );
     expect(INTRO_PANELS.at(-1)?.speaker).toBe('wick');
     for (const p of INTRO_PANELS) expect(p.text.length).toBeGreaterThan(20);
   });
@@ -74,6 +79,39 @@ describe('IntroCutscene', () => {
       expect(q('intro-next')?.getAttribute('aria-label')).toBe('Begin the journey');
     } finally {
       vi.useRealTimers();
+    }
+  });
+
+  it('names its last step after the story it is telling', () => {
+    const onDone = vi.fn();
+    const story = LAND_STORIES['mistvale-marsh']!;
+    act(() =>
+      root.render(
+        createElement(IntroCutscene, {
+          reduceMotion: true,
+          onDone,
+          autoAdvanceMs: 0,
+          panels: story.panels,
+          finishLabel: story.finishLabel,
+        }),
+      ),
+    );
+    for (let i = 1; i < story.panels.length; i++) act(() => q('intro-next')!.click());
+    expect(q('intro-next')?.getAttribute('aria-label')).toBe('Into the fog');
+  });
+});
+
+describe('land arrival stories', () => {
+  it('cover the wave 2 lands, have painted art on disk, and belong to lands with levels', () => {
+    expect(Object.keys(LAND_STORIES).sort()).toEqual(['emberpeak', 'mistvale-marsh']);
+    for (const [land, story] of Object.entries(LAND_STORIES)) {
+      expect(story.panels.length, land).toBeGreaterThanOrEqual(2);
+      expect(levelsForLand(land as never).length, land).toBeGreaterThan(0);
+      for (const p of story.panels) {
+        const file = p.image.replace(/^.*assets\//, 'public/assets/');
+        expect(existsSync(file), file).toBe(true);
+        expect(p.text.length).toBeGreaterThan(20);
+      }
     }
   });
 });

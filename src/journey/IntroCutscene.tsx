@@ -1,44 +1,10 @@
-// The Journey's opening story (JOURNEY_PLAN.md, Act I "Waking"): six painted panels that set up
-// the Skylight, its scattering, the Keeper and Wick. Plays the first time the map opens and
-// again from the map's "Watch the story" button. Tap or press a key to go on; panels
-// also move on by themselves. Reduce motion turns off the drift and cross-fades.
+// A painted story cutscene (the Journey's opening, and each land's short arrival story; the
+// panels live in stories.ts). Tap or press a key to go on; panels also move on by themselves.
+// Reduce motion turns off the drift and cross-fades.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { introPanelUrl, wickUrl } from '../render/assetUrls';
-
-export interface StoryPanel {
-  /** Painted panel number, public/assets/story/intro-N.webp. */
-  art: number;
-  text: string;
-  /** Lines Wick says aloud get his portrait beside the caption. */
-  speaker?: 'wick';
-}
-
-export const INTRO_PANELS: readonly StoryPanel[] = [
-  {
-    art: 1,
-    text: 'High above every land hung the Skylight. Its glow kept the whole world in colour.',
-  },
-  { art: 2, text: 'Then, one still night, the Skylight cracked.' },
-  {
-    art: 3,
-    text: 'Its light scattered into countless tiny motes, and one by one the lands went grey.',
-  },
-  {
-    art: 4,
-    text: 'In a quiet field in Sunmeadow Hollow, one small glow stirred. That glow is you: a Keeper.',
-  },
-  {
-    art: 5,
-    speaker: 'wick',
-    text: "Oh! You're awake! I'm Wick. I've kept this map safe for ever so long, waiting for someone who can gather light.",
-  },
-  {
-    art: 6,
-    speaker: 'wick',
-    text: 'Bring two alike together and they become something brighter. Shall we wake the lands, one at a time?',
-  },
-];
+import { wickUrl } from '../render/assetUrls';
+import { INTRO_PANELS, type StoryPanel } from './stories';
 
 /** How long a panel stays before moving on by itself. */
 const AUTO_ADVANCE_MS = 7000;
@@ -48,6 +14,10 @@ export interface IntroCutsceneProps {
   /** Called once, whether the story finished or was skipped. */
   onDone: () => void;
   panels?: readonly StoryPanel[];
+  /** Screen-reader name for the cutscene. */
+  label?: string;
+  /** What the last tap does, e.g. "Begin the journey". */
+  finishLabel?: string;
   /** Tests pass 0 to switch the timer off. */
   autoAdvanceMs?: number;
 }
@@ -56,6 +26,8 @@ export function IntroCutscene({
   reduceMotion,
   onDone,
   panels = INTRO_PANELS,
+  label = 'The story so far',
+  finishLabel = 'Begin the journey',
   autoAdvanceMs = AUTO_ADVANCE_MS,
 }: IntroCutsceneProps) {
   const [index, setIndex] = useState(0);
@@ -98,7 +70,7 @@ export function IntroCutscene({
   // Warm the next panel so the cross-fade never shows a blank frame.
   useEffect(() => {
     const following = panels[index + 1];
-    if (following) new Image().src = introPanelUrl(following.art);
+    if (following) new Image().src = following.image;
   }, [index, panels]);
 
   return (
@@ -106,14 +78,14 @@ export function IntroCutscene({
       className="absolute inset-0 z-40 flex flex-col overflow-hidden bg-ink text-white"
       role="dialog"
       aria-modal
-      aria-label="The story so far"
+      aria-label={label}
       data-testid="intro-cutscene"
     >
       {/* Painted panels, cross-faded; only the current one drifts. */}
       {panels.map((p, i) => (
         <img
-          key={p.art}
-          src={introPanelUrl(p.art)}
+          key={p.image}
+          src={p.image}
           alt=""
           aria-hidden
           draggable={false}
@@ -134,7 +106,7 @@ export function IntroCutscene({
         <div className="flex gap-1.5" aria-hidden>
           {panels.map((p, i) => (
             <span
-              key={p.art}
+              key={p.image}
               className={`h-1.5 rounded-full transition-all ${
                 i === index ? 'w-6 bg-white' : i < index ? 'w-1.5 bg-white/80' : 'w-1.5 bg-white/35'
               }`}
@@ -156,7 +128,7 @@ export function IntroCutscene({
         type="button"
         className="relative mt-auto flex w-full items-end gap-3 px-4 pt-24 pb-6 text-left focus-visible:outline-none"
         onClick={next}
-        aria-label={last ? 'Begin the journey' : 'Next'}
+        aria-label={last ? finishLabel : 'Next'}
         data-testid="intro-next"
       >
         {panel.speaker === 'wick' && (
@@ -180,7 +152,7 @@ export function IntroCutscene({
             {panel.text}
           </p>
           <p className="mt-2 text-right font-display text-sm font-semibold text-ink-soft">
-            {last ? 'Begin the journey ›' : 'Tap to continue ›'}
+            {last ? `${finishLabel} ›` : 'Tap to continue ›'}
           </p>
         </div>
       </button>

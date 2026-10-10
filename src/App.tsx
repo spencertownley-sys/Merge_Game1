@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import { levelById } from './journey/levels';
+import { LAND_STORIES } from './journey/stories';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ToastHost } from './components/Toast';
 import { useSettingsHydration } from './hooks/useSettingsHydration';
@@ -20,6 +21,7 @@ const JourneyMap = lazy(() =>
 );
 import { useGameStore } from './store/gameStore';
 import type { SimLevelConfig } from './engine/types';
+import type { LandId } from './types';
 
 declare global {
   interface Window {
@@ -112,12 +114,15 @@ export default function App() {
   useEffect(() => {
     void hydrateTuning();
   }, [hydrateTuning]);
-  // ?admin=1 opens the admin back end directly (it is also reachable from Home); ?story=1
-  // is a shareable link straight into the Journey intro story.
+  // ?admin=1 opens the admin back end directly (it is also reachable from Home). ?story=1 is
+  // a shareable link straight into the Journey intro story; ?story=<land id> plays that
+  // land's arrival story.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
+    const story = params.get('story');
     if (params.get('admin') === '1') navigate({ name: 'admin' });
-    else if (params.get('story') === '1') navigate({ name: 'journey', story: true });
+    else if (story === '1') navigate({ name: 'journey', story: true });
+    else if (story && story in LAND_STORIES) navigate({ name: 'journey', story: story as LandId });
   }, [navigate]);
   const [debug] = useState(() =>
     DEBUG_HOOKS ? new URLSearchParams(location.search).get('debug') : null,

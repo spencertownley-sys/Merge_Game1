@@ -27,7 +27,7 @@ function TierChip({ tier, size = 36 }: { tier: number; size?: number }) {
 /** Header, in the reference layout: controls on the left, score and best in one pill in the
  *  middle, and the next mote on the right. The held mote itself hangs above the glass rim on
  *  the board, and combos show on the merged mote (boardScene.ts), so neither needs a chip here. */
-export function HUDTop({ children }: { children?: ReactNode }) {
+export function HUDTop({ children, fog = false }: { children?: ReactNode; fog?: boolean }) {
   const score = useGameStore((s) => s.score);
   const best = useGameStore((s) => s.bestScore);
   const warning = useGameStore((s) => s.warning);
@@ -64,8 +64,18 @@ export function HUDTop({ children }: { children?: ReactNode }) {
         className="flex items-center gap-1.5 rounded-full bg-white/80 py-1 pr-3 pl-1 shadow-sm"
         data-testid="next-pill"
       >
-        <TierChip tier={next[0] ?? 0} size={30} />
-        <span className="text-xs font-bold text-ink-soft">Next</span>
+        {fog ? (
+          // Fog levels hide what comes next (JOURNEY_PLAN.md §2.4).
+          <span
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gradient-to-br from-slate-200 to-teal-100 font-display text-base font-bold text-ink-soft"
+            aria-label="Hidden by fog"
+          >
+            ?
+          </span>
+        ) : (
+          <TierChip tier={next[0] ?? 0} size={30} />
+        )}
+        <span className="text-xs font-bold text-ink-soft">{fog ? 'Foggy' : 'Next'}</span>
       </div>
     </div>
   );

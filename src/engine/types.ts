@@ -9,7 +9,7 @@ import type { PhysicsTuning } from '../config/physics';
  *  stay on the main thread (journey/levelRuntime.ts) and only consume sim events. */
 export interface SimLevelConfig {
   spawnBag?: [number, number, number, number, number];
-  previewCount?: 1 | 2;
+  previewCount?: 0 | 1 | 2;
   obstacles?: Obstacle[];
   wind?: WindHazard;
   mergeContactMs?: number;
