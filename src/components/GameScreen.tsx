@@ -199,7 +199,12 @@ export function GameScreen(props: GameScreenProps) {
           : undefined,
         levelName: level ? `${level.id}. ${level.name}` : undefined,
         stars: level ? levelStatus?.stars : undefined,
-        url: typeof location !== 'undefined' ? location.host : undefined,
+        // host + base path, so a card shared from a sub-path deploy (GitHub Pages) leads back to
+        // the game rather than the host's root
+        url:
+          typeof location !== 'undefined'
+            ? `${location.host}${import.meta.env.BASE_URL}`.replace(/\/+$/, '')
+            : undefined,
       });
       if (outcome.method === 'download') setCardBlob(outcome.blob);
     } catch (err) {
