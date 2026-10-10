@@ -16,6 +16,7 @@ import { LEVELS } from '../journey/levels';
 import { tierName } from '../render/coreArt';
 import { EvolutionStrip, HUDTop } from './HUD';
 import { DEFAULT_LAND, LAND_PALETTES } from '../render/palette';
+import { playEvents, unlockAudio } from '../audio/sfx';
 import { PauseOverlay } from './PauseOverlay';
 import { ResultsScreen } from './ResultsScreen';
 import { SettingsPanel } from './SettingsPanel';
@@ -88,6 +89,7 @@ export function GameScreen(props: GameScreenProps) {
     let lastStatus: LevelStatus | null = null;
     const unsub = c.subscribe((snap, events) => {
       applyFrame(snap, events);
+      playEvents(events);
       if (rt) {
         const st = rt.applyFrame(snap, events);
         if (statusChanged(lastStatus, st)) {
@@ -163,7 +165,10 @@ export function GameScreen(props: GameScreenProps) {
     };
   }, [runEnded, savedResult, mode, levelId, level, levelStatus, recordJourney, toast]);
 
-  const onDrop = useCallback((x: number) => clientRef.current?.drop(x), []);
+  const onDrop = useCallback((x: number) => {
+    unlockAudio(); // a drop is a user gesture, so the browser lets sound start here
+    clientRef.current?.drop(x);
+  }, []);
   const pause = () => {
     clientRef.current?.pause();
     setPaused(true);
@@ -194,7 +199,12 @@ export function GameScreen(props: GameScreenProps) {
           : undefined,
         levelName: level ? `${level.id}. ${level.name}` : undefined,
         stars: level ? levelStatus?.stars : undefined,
-        url: typeof location !== 'undefined' ? location.host : undefined,
+        // host + base path, so a card shared from a sub-path deploy (GitHub Pages) leads back to
+        // the game rather than the host's root
+        url:
+          typeof location !== 'undefined'
+            ? `${location.host}${import.meta.env.BASE_URL}`.replace(/\/+$/, '')
+            : undefined,
       });
       if (outcome.method === 'download') setCardBlob(outcome.blob);
     } catch (err) {

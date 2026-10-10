@@ -58,7 +58,7 @@ export function SettingsPanel({ onClose, overlay }: SettingsPanelProps) {
       </div>
       <h3 className="mt-2 px-4 text-xs font-bold tracking-wide text-ink-soft uppercase">Audio</h3>
       <Toggle id="sound" label="Sound effects" />
-      <Toggle id="music" label="Music" />
+      <Toggle id="music" label="Music" hint="Coming soon" disabled />
       <Toggle id="haptics" label="Haptics" hint="Coming to mobile" disabled />
       <h3 className="mt-2 px-4 text-xs font-bold tracking-wide text-ink-soft uppercase">
         Motion & graphics

@@ -443,7 +443,7 @@ type StarRule = { dropsRemainingAtLeast?: number; secondsRemainingAtLeast?: numb
 | 7   | Score 400           | 60 s       | Speed                  |
 | 8   | Free 4 ice balls    | 35 drops   | Thaw mechanic          |
 | 9   | Reach tier 6        | wind       | Hazards                |
-| 10  | Reach tier 8        | 60 drops   | Mini-boss              |
+| 10  | Reach tier 8        | 100 drops  | Mini-boss              |
 
 Star rules: 1 star = goals met. 2 stars = goals met with at least 30% of the drop or time budget left. 3 stars = at least 50% left. Levels without a budget use score thresholds instead (set per level).
 
