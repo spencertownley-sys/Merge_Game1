@@ -445,6 +445,10 @@ type StarRule = { dropsRemainingAtLeast?: number; secondsRemainingAtLeast?: numb
 | 9   | Reach tier 6        | wind       | Hazards                |
 | 10  | Reach tier 8        | 100 drops  | Mini-boss              |
 
+Shipped content runs further than this table: levels 1-16 across the first five lands are in
+`src/journey/levels/index.ts`, and `JOURNEY_PLAN.md` holds the full 41-level plan and the
+balancing targets.
+
 Star rules: 1 star = goals met. 2 stars = goals met with at least 30% of the drop or time budget left. 3 stars = at least 50% left. Levels without a budget use score thresholds instead (set per level).
 
 ---

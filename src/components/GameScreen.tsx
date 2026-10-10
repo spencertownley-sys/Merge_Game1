@@ -16,6 +16,7 @@ import { LEVELS } from '../journey/levels';
 import { tierName } from '../render/coreArt';
 import { EvolutionStrip, HUDTop } from './HUD';
 import { DEFAULT_LAND, LAND_PALETTES } from '../render/palette';
+import { landBackdropUrl, landFrameUrl } from '../render/assetUrls';
 import { playEvents, unlockAudio } from '../audio/sfx';
 import { PauseOverlay } from './PauseOverlay';
 import { ResultsScreen } from './ResultsScreen';
@@ -218,7 +219,8 @@ export function GameScreen(props: GameScreenProps) {
 
   // The whole screen takes the land's colours, so the space around the letterboxed board
   // reads as part of the scene (the reference fills its screen with one warm backdrop).
-  const palette = LAND_PALETTES[level?.land ?? DEFAULT_LAND] ?? LAND_PALETTES[DEFAULT_LAND];
+  const landId = level?.land ?? DEFAULT_LAND;
+  const palette = LAND_PALETTES[landId] ?? LAND_PALETTES[DEFAULT_LAND];
   const sky = level && !landRestoredNow ? palette.dim : palette;
   return (
     <div
@@ -285,8 +287,8 @@ export function GameScreen(props: GameScreenProps) {
             visual={visualTuning}
             artStyle={artStyle}
             tierArt={artOverrides.tierArt}
-            frameArtUrl={artOverrides.frameArt[level?.land ?? 'sunmeadow-hollow']}
-            backgroundArtUrl={artOverrides.backgroundArt[level?.land ?? 'sunmeadow-hollow']}
+            frameArtUrl={artOverrides.frameArt[landId] ?? landFrameUrl(landId)}
+            backgroundArtUrl={artOverrides.backgroundArt[landId] ?? landBackdropUrl(landId)}
             onReady={() => setStageReady(true)}
           />
         )}

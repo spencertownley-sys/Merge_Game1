@@ -107,6 +107,8 @@ export interface Settings {
   reduceMotion: boolean;
   simpleGraphics: boolean;
   showTierNumbers: boolean;
+  /** The Journey intro story has played once; replays come from the map's button. */
+  introSeen: boolean;
 }
 
 export type SettingKey = keyof Settings;

@@ -21,11 +21,19 @@ describe('Journey level content', () => {
     }
   });
 
-  it('covers the first three lands (Sunmeadow Hollow, Driftmoor Cove, Whisperwood)', () => {
+  it('covers the first five lands, wave 1 included (Thistledown Hills, Copperleaf Orchard)', () => {
     const lands = new Set(LEVELS.map((l) => l.land));
-    expect(lands.has('sunmeadow-hollow')).toBe(true);
-    expect(lands.has('driftmoor-cove')).toBe(true);
-    expect(lands.has('whisperwood')).toBe(true);
+    for (const land of LANDS.slice(0, 5)) expect(lands.has(land.id), land.name).toBe(true);
+  });
+
+  it('gives every land with levels a closing boss that asks for more than its opener', () => {
+    const tierOf = (l: (typeof LEVELS)[number]) =>
+      l.goals.find((g) => g.type === 'reachTier')?.tier ?? 0;
+    for (const land of ['thistledown-hills', 'copperleaf-orchard'] as const) {
+      const levels = LEVELS.filter((l) => l.land === land);
+      expect(levels).toHaveLength(3);
+      expect(tierOf(levels[2]!)).toBeGreaterThan(tierOf(levels[0]!));
+    }
   });
 
   it('has at least one goal and valid star rules per level', () => {

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { tierName } from '../render/coreArt';
 import { tierDef } from '../config/tiers';
 import type { Stars } from '../types';
+import { moteArtUrl } from '../render/assetUrls';
 
 export interface ResultsScreenProps {
   mode: 'classic' | 'journey';
@@ -59,12 +60,13 @@ export function ResultsScreen(p: ResultsScreenProps) {
         {p.levelName && <p className="-mt-2 text-sm text-ink-soft">{p.levelName}</p>}
         {def && (
           <div className="flex flex-col items-center gap-1">
-            <div
-              className="h-24 w-24 rounded-full shadow-lg"
-              style={{
-                background: `radial-gradient(circle at 35% 30%, #ffffffcc 0%, ${def.rimColor} 45%, ${def.rimColor} 100%)`,
-                boxShadow: `0 6px 24px ${def.rimColor}88`,
-              }}
+            <img
+              src={moteArtUrl(p.topTier)}
+              alt=""
+              width={96}
+              height={96}
+              className="h-24 w-24"
+              style={{ filter: `drop-shadow(0 6px 18px ${def.rimColor}88)` }}
               aria-hidden
             />
             <span className="text-sm font-semibold text-ink-soft">

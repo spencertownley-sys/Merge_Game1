@@ -1,10 +1,20 @@
 // One rendered ball: a quad Mesh with the gummy shader (high quality) or the flat sprite
 // fallback (simpleSprite.ts), plus the accessibility rim ring and optional tier numeral.
 
-import { Container, Graphics, Mesh, MeshGeometry, Shader, Text, type Texture } from 'pixi.js';
+import {
+  Container,
+  Graphics,
+  Mesh,
+  MeshGeometry,
+  Shader,
+  Sprite,
+  Text,
+  type Texture,
+} from 'pixi.js';
 import { ballUniformsOf, createBallShader } from './ballShader';
 import { drawRim } from './rim';
 import { createSimpleBall, type SimpleBall } from './simpleSprite';
+import { MOTE_ART_EDGE_SCALE } from './assetUrls';
 import { tierDef } from '../config/tiers';
 import type { ArtStyleId } from '../config/tuning';
 
@@ -43,6 +53,8 @@ export class BallView {
   readonly body = new Container();
   private mesh: Mesh<MeshGeometry, Shader> | null = null;
   private simple: SimpleBall | null = null;
+  /** The painted Storybook mote (the whole ball is the image). */
+  private painted: Sprite | null = null;
   private rim: Graphics | null = null;
   private overlay: Graphics | null = null;
   private label: Text | null = null;
@@ -68,8 +80,14 @@ export class BallView {
       return;
     }
 
-    const style = opts.artStyle ?? 'gummy';
-    if (style === 'gummy' && opts.quality === 'high') {
+    const style = opts.artStyle ?? 'storybook';
+    if (style === 'storybook') {
+      // The painted art already carries the body, gloss and face, so it is the whole ball.
+      this.painted = new Sprite(opts.coreTexture);
+      this.painted.anchor.set(0.5);
+      this.painted.width = this.painted.height = opts.radius * 2 * MOTE_ART_EDGE_SCALE;
+      this.body.addChild(this.painted);
+    } else if (style === 'gummy' && opts.quality === 'high') {
       const shader = createBallShader(opts.tier, opts.coreTexture);
       this.mesh = new Mesh({ geometry: getQuadGeometry(), shader });
       this.mesh.scale.set(opts.radius);
@@ -89,8 +107,10 @@ export class BallView {
     this.rim = drawRim(
       new Graphics(),
       opts.tier,
-      style === 'fruit' ? opts.radius * 0.9 : opts.radius,
+      style === 'fruit' || style === 'storybook' ? opts.radius * 0.9 : opts.radius,
     );
+    // On the painted art the accessibility ring is a quiet inner line, not a second outline.
+    if (style === 'storybook') this.rim.alpha = 0.55;
     this.body.addChild(this.rim);
 
     if (this.kind === 'ice') this.setFrozen(true);
@@ -145,6 +165,12 @@ export class BallView {
     // The shader handles the visual spin via uRot; the simple fallback rotates the sprite.
     if (this.simple) this.simple.setAngle(angle);
     if (this.rim) this.rim.rotation = angle;
+  }
+
+  /** The face's on-screen roll (§9.2 settle): painted motes turn by it and come back upright
+   *  at rest, like the shader's faces. */
+  setDisplayAngle(angle: number): void {
+    if (this.painted) this.painted.rotation = angle;
   }
 
   setSquash(scaleX: number, scaleY: number): void {

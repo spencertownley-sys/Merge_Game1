@@ -7,6 +7,7 @@
 import { BRAND_NAME } from '../config/brand';
 import { tierDef } from '../config/tiers';
 import { drawPlaceholderCore, tierName } from '../render/coreArt';
+import { MOTE_ART_EDGE_SCALE, moteArtUrl } from '../render/assetUrls';
 import type { LandId, MergeEvent } from '../types';
 
 export const SHARE_CARD_WIDTH = 1080;
@@ -74,7 +75,39 @@ function roundedRect(
   ctx.closePath();
 }
 
-/** Draws a default-art mote as a 2D gummy orb (a canvas approximation of the §9.3 look). */
+/** Painted mote images (default Skylight-mote art, never personal art), loaded before a card is
+ *  drawn so drawing can stay synchronous. */
+const moteImages = new Map<number, HTMLImageElement>();
+
+function loadImage(url: string, timeoutMs: number): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    if (typeof Image === 'undefined') return resolve(null);
+    const img = new Image();
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+    img.onload = () => {
+      clearTimeout(timer);
+      resolve(img);
+    };
+    img.onerror = () => {
+      clearTimeout(timer);
+      resolve(null);
+    };
+    img.src = url;
+  });
+}
+
+/** Loads the painted art for these tiers; a tier that fails keeps the drawn fallback. */
+export async function preloadMoteImages(tiers: Iterable<number>, timeoutMs = 2000): Promise<void> {
+  const wanted = [...new Set(tiers)].filter((t) => t >= 1 && t <= 11 && !moteImages.has(t));
+  const loaded = await Promise.all(wanted.map((t) => loadImage(moteArtUrl(t), timeoutMs)));
+  wanted.forEach((t, i) => {
+    const img = loaded[i];
+    if (img) moteImages.set(t, img);
+  });
+}
+
+/** Draws a default-art mote: the painted art when it has loaded, else a 2D gummy orb (a canvas
+ *  approximation of the §9.3 look). */
 export function drawMote(
   ctx: CanvasRenderingContext2D,
   tier: number,
@@ -83,6 +116,12 @@ export function drawMote(
   r: number,
 ): void {
   const def = tierDef(tier);
+  const painted = moteImages.get(tier);
+  if (painted) {
+    const d = r * 2 * MOTE_ART_EDGE_SCALE;
+    ctx.drawImage(painted, cx - d / 2, cy - d / 2, d, d);
+    return;
+  }
   ctx.save();
   // body
   const body = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.35, r * 0.1, cx, cy, r);
@@ -260,6 +299,15 @@ export interface ShareOutcome {
 
 /** Web Share API with a PNG-download fallback (§11). */
 export async function shareCard(input: ShareCardInput): Promise<ShareOutcome> {
+  const tiers = new Set<number>();
+  const walk = (n: ReturnType<typeof buildAncestry>) => {
+    if (!n) return;
+    tiers.add(n.tier);
+    n.children?.forEach(walk);
+  };
+  walk(buildAncestry(input.mergeLog, input.topTier));
+  tiers.add(input.topTier);
+  await preloadMoteImages(tiers);
   const canvas = renderShareCard(input);
   const blob = await canvasToBlob(canvas);
   const file = new File([blob], `${BRAND_NAME.toLowerCase()}-${input.score}.png`, {

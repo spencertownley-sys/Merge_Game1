@@ -1,13 +1,15 @@
 // Art style presets for the motes (admin-selectable). Each style decides how a BallView is
-// built: the gummy shader (§9.3), a watercolor-paper disc, or a bold flat fruit-merge look.
-// Custom per-tier art (any image URL) layers on top of any style as the core/face texture.
+// built: the painted Storybook motes (Higgsfield art, the default), the gummy shader (§9.3), a
+// watercolor-paper disc, or a bold flat fruit-merge look. Custom per-tier art (any image URL)
+// replaces the art for any style.
 
 import { Assets, Texture } from 'pixi.js';
 import type { ArtStyleId } from '../config/tuning';
 import { TIER_COUNT } from '../config/tiers';
 import { drawPlaceholderCore, TIER_ART_URLS } from './coreArt';
+import { moteArtUrl } from './assetUrls';
 
-let styleId: ArtStyleId = 'gummy';
+let styleId: ArtStyleId = 'storybook';
 let overrides: Partial<Record<number, string>> = {};
 /** Bumped whenever textures must be rebuilt (style or override change). */
 let generation = 0;
@@ -36,8 +38,14 @@ export function setTierArtOverrides(next: Partial<Record<number, string>>): bool
   return true;
 }
 
+/** The art a tier loads: an admin override, else the painted mote for the Storybook style, else
+ *  any shipped core art (the code-drawn placeholder stands in until an image loads). */
+function artUrlFor(tier: number): string | undefined {
+  return overrides[tier] ?? (styleId === 'storybook' ? moteArtUrl(tier) : TIER_ART_URLS[tier]);
+}
+
 function keyFor(tier: number): string {
-  return `${styleId}:${overrides[tier] ?? TIER_ART_URLS[tier] ?? 'builtin'}:${tier}`;
+  return `${styleId}:${artUrlFor(tier) ?? 'builtin'}:${tier}`;
 }
 
 /** Synchronous accessor; returns the built-in placeholder immediately and swaps in a custom
@@ -46,9 +54,11 @@ export function coreTextureFor(tier: number): Texture {
   const key = keyFor(tier);
   const hit = cache.get(key);
   if (hit) return hit;
-  const tex = Texture.from(drawPlaceholderCore(tier, undefined, styleId));
+  const tex = Texture.from(
+    drawPlaceholderCore(tier, undefined, styleId === 'storybook' ? 'gummy' : styleId),
+  );
   cache.set(key, tex);
-  const url = overrides[tier] ?? TIER_ART_URLS[tier];
+  const url = artUrlFor(tier);
   if (url) {
     Assets.load<Texture>({ src: url, alias: `${url}#${tier}`, loadParser: 'loadTextures' })
       .then((loaded) => {

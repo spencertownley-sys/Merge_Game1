@@ -40,12 +40,16 @@ Steps 1-8 of the `CLAUDE.md` build plan are implemented:
   same seed + input log and asserts an identical final state.
 - **Rendering** — PixiJS gummy-candy sphere shader (game design §9.3), gaze/settle/spin,
   impact squash, merge pop + coin-flip, rim styles for colour-free tier reading, and a
-  simple-graphics fallback. Tier art is an original procedural placeholder until the
-  commissioned pieces are dropped into `TIER_ART_URLS` (`src/render/coreArt.ts`).
+  simple-graphics fallback. All shipped art (the 11 tier motes, 13 land backdrops and
+  frames, the intro story panels, Wick, and the app icons) is original, generated with
+  Higgsfield and stored in `public/assets/` (`src/render/assetUrls.ts`). The older
+  code-drawn styles stay available as alternates on the Admin screen.
 - **Classic mode** — drag/release input with a ghost guide, HUD, pause, results, best score.
-- **Journey mode** — 10 levels across Sunmeadow Hollow, Driftmoor Cove and Whisperwood
-  (rock / ice / wind, drop and time limits, stars), a scrolling land map with the
-  restored-palette shift, and a level intro card. Land art is a placeholder palette per land.
+- **Journey mode** — 16 levels across Sunmeadow Hollow, Driftmoor Cove, Whisperwood,
+  Thistledown Hills and Copperleaf Orchard (rock / ice / wind, drop and time limits, stars),
+  a six-panel intro story with Wick on the first visit (replayable from the map), a scrolling
+  land map with painted backdrops that regain colour when a land is restored, and a level
+  intro card. See `JOURNEY_PLAN.md` for the remaining lands.
 - **Share card** — 1080×1350 canvas PNG via the Web Share API with a download fallback.
 - **Settings & PWA** — sound/music/haptics-placeholder/reduce-motion/simple-graphics/tier
   numbers, persisted in IndexedDB; installable with an offline service worker.
@@ -77,9 +81,9 @@ paper / Bold fruit) and takes custom image URLs per tier and per-land frame / ba
 Tuning is persisted in IndexedDB and can be exported/imported as JSON; paste exported values
 into `src/config/physics.ts` / `src/config/tuning.ts` to make them the shipped defaults.
 
-**Land frames** — each level is framed by artwork for its land (`src/render/frame.ts`,
-procedural until commissioned pieces exist; any land's frame can be replaced with an image from
-the Admin screen). The frame dims with the land until the land is restored.
+**Land frames** — each level is framed by painted artwork for its land
+(`public/assets/frames/`, drawn by `src/render/frame.ts`; any land's frame can be replaced with
+an image from the Admin screen). The frame dims with the land until the land is restored.
 
 Dev-only URL flags (`npm run dev`): `?debug=shader` (shader orientation harness),
 `?debug=fill` (all tier-5 drops, used by the smoke test), `?debug=tuning` (live physics panel),

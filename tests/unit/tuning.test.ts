@@ -54,7 +54,7 @@ describe('tuning model', () => {
     expect(t.physics.frictionBallBall).toBe(0);
     expect(t.physics.restitutionBallBall).toBe(DEFAULT_TUNING.restitutionBallBall);
     expect(t.visual.squashAmplitudeX).toBe(DEFAULT_VISUAL.squashAmplitudeX);
-    expect(t.artStyle).toBe('gummy');
+    expect(t.artStyle).toBe('storybook');
     expect(t.art.tierArt).toEqual({ 1: 'https://example.com/a.png' });
     expect(t.art.frameArt).toEqual({ whisperwood: 'data:image/png;base64,AAAA' });
   });
@@ -84,6 +84,23 @@ describe('tuning model', () => {
     expect(t.presetId).toBe('reference');
     expect(t.artStyle).toBe('watercolor');
     expect(t.art.tierArt[2]).toBe('https://x/two.png');
+  });
+});
+
+describe('painted art migration', () => {
+  it('moves the old code-drawn default onto the painted motes, keeping the saved feel', () => {
+    const t = normalizeTuning({
+      version: 2,
+      physics: { ...DEFAULT_TUNING, gravity: 9 },
+      artStyle: 'gummy',
+    });
+    expect(t.artStyle).toBe('storybook');
+    expect(t.physics.gravity).toBe(9);
+  });
+
+  it('respects a code-drawn style picked after the painted art shipped', () => {
+    expect(normalizeTuning({ version: TUNING_VERSION, artStyle: 'gummy' }).artStyle).toBe('gummy');
+    expect(normalizeTuning({ version: 2, artStyle: 'fruit' }).artStyle).toBe('fruit');
   });
 });
 

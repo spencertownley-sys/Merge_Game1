@@ -12,6 +12,13 @@ test('completing Journey level 1 awards stars and unlocks level 2', async ({ pag
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Journey' }).click();
+  // First visit plays the intro story; step through it once, then skip the rest.
+  await expect(page.getByTestId('intro-cutscene')).toBeVisible();
+  await expect(page.getByTestId('intro-text')).toContainText('Skylight');
+  await page.getByTestId('intro-next').click();
+  await expect(page.getByTestId('intro-text')).toContainText('cracked');
+  await page.getByTestId('intro-skip').click();
+  await expect(page.getByTestId('intro-cutscene')).toBeHidden();
   await expect(page.getByTestId('journey-map')).toBeVisible();
   await expect(page.getByTestId('level-2')).toBeDisabled();
   await page.getByTestId('level-1').click();
@@ -44,6 +51,7 @@ test('completing Journey level 1 awards stars and unlocks level 2', async ({ pag
   // Back on the map, level 2 is now playable and level 1 shows stars.
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByTestId('journey-map')).toBeVisible();
+  await expect(page.getByTestId('intro-cutscene')).toBeHidden(); // the story only plays once
   await expect(page.getByTestId('level-2')).toBeEnabled();
   await expect(page.getByTestId('level-1')).toContainText('★');
 });

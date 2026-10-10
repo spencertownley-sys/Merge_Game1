@@ -2,7 +2,7 @@
 // Procedural Pixi drawing so it ships without assets; the admin screen can replace any land's
 // frame with a custom image (drawn underneath the board, so the board still sits in the hole).
 
-import { Assets, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Assets, ColorMatrixFilter, Container, Graphics, Sprite, Texture } from 'pixi.js';
 import { PHYSICS } from '../config/physics';
 import { LAND_PALETTES } from './palette';
 import type { LandId } from '../types';
@@ -289,6 +289,14 @@ export class LandFrame {
     this.imageUrl = imageUrl;
     this.draw();
     this.loadImage(imageUrl);
+    if (restored) {
+      this.imageHolder.filters = [];
+    } else {
+      // painted frames grey out until the land is restored, like the procedural one darkens
+      const f = new ColorMatrixFilter();
+      f.desaturate();
+      this.imageHolder.filters = [f];
+    }
   }
 
   private draw(): void {
