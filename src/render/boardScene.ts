@@ -42,7 +42,8 @@ import {
   type SettleState,
 } from './orientation';
 import { DEFAULT_LAND, LAND_PALETTES } from './palette';
-import type { LandId } from '../types';
+import type { LandId, WallBlock } from '../types';
+import { clampDropX, landingOnWalls } from '../engine/walls';
 
 export interface BoardSceneOptions {
   quality: GraphicsQuality;
@@ -60,6 +61,8 @@ export interface BoardSceneOptions {
   showFrame?: boolean;
   /** Fog levels (previewCount 0): soft mist drifts over the hanging zone. */
   fog?: boolean;
+  /** Shaped boxes: static glass blocks inside the board (same geometry the sim uses). */
+  walls?: readonly WallBlock[];
 }
 
 interface LiveBall {
@@ -139,6 +142,7 @@ export class BoardScene {
   private readonly bg = new Graphics();
   private readonly bgImageHolder = new Container();
   private readonly glass = new Graphics();
+  private readonly wallBlocks = new Graphics();
   private readonly frameEdge = new Graphics();
   private readonly dangerLine = new Graphics();
   private readonly ghost = new Graphics();
@@ -179,6 +183,7 @@ export class BoardScene {
       this.bg,
       this.bgImageHolder,
       this.glass,
+      this.wallBlocks,
       this.ghost,
       this.ballLayer,
       this.fxLayer,
@@ -195,6 +200,7 @@ export class BoardScene {
     this.drawGlass();
     this.drawDangerLine(false, 1);
     this.buildFog();
+    this.drawWalls();
     app.stage.addChild(this.root);
   }
 
@@ -322,9 +328,29 @@ export class BoardScene {
       this.applyLook();
     }
     if (opts.fog !== undefined) this.fogLayer.visible = !!opts.fog;
+    if (opts.walls !== undefined && opts.walls !== prev.walls) this.drawWalls();
     if (opts.showFrame !== undefined && opts.showFrame !== prev.showFrame) {
       const host = this.app.canvas;
       this.resize(host.clientWidth || host.width, host.clientHeight || host.height);
+    }
+  }
+
+  /** Shaped-box blocks drawn as frosted glass: a pale, mostly opaque pane with a soft violet
+   *  edge, so pillars and narrowed sides read clearly against any land's backdrop. */
+  private drawWalls(): void {
+    const g = this.wallBlocks;
+    g.clear();
+    for (const w of this.opts.walls ?? []) {
+      const rad = Math.min(8, w.width / 2);
+      g.roundRect(w.x, w.y, w.width, w.height, rad)
+        .fill({ color: 0xf6f3ff, alpha: 0.82 })
+        .stroke({ color: 0x8f86b8, alpha: 0.7, width: 2 });
+      // a bright highlight down one edge so the block reads as glass, not a hole
+      const hw = Math.max(2, Math.min(5, w.width * 0.15));
+      g.roundRect(w.x + 4, w.y + 5, hw, Math.max(0, w.height - 10), 2).fill({
+        color: 0xffffff,
+        alpha: 0.95,
+      });
     }
   }
 
@@ -773,7 +799,7 @@ export class BoardScene {
     this.ghost.clear();
     if (!this.heldView) return;
     const r = this.heldView.radius;
-    const x = Math.min(Math.max(this.heldX, r), BOARD_W - r);
+    const x = clampDropX(this.heldX, r, this.opts.walls);
     // the waiting pulse stretches the held ball downward from its top (reference video)
     const reduce = this.opts.reduceMotion;
     const amp = reduce ? 0 : this.visual.heldPulse * heldPulseEnvelope(this.clockMs);
@@ -791,7 +817,7 @@ export class BoardScene {
       // dotted guide in the held tier's colour, from under the ball to where it will land
       const color = tierDef(this.heldTier).rimColor;
       const top = PHYSICS.dropRailYPx + r + 10;
-      const end = landingCenterY(x, r, snap.balls);
+      const end = Math.min(landingCenterY(x, r, snap.balls), landingOnWalls(x, r, this.opts.walls));
       const spacing = 13;
       for (let y = top; y < end; y += spacing) {
         const fade = 1 - Math.max(0, (y - (end - 60)) / 60);

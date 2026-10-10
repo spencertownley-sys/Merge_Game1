@@ -4,6 +4,7 @@ import { LEVELS } from '../../src/journey/levels';
 import { LANDS } from '../../src/journey/lands';
 import { PHYSICS } from '../../src/config/physics';
 import { DROPPABLE_TIERS, TIER_COUNT, tierRadiusPx } from '../../src/config/tiers';
+import { dropRange } from '../../src/engine/walls';
 
 describe('Journey level content', () => {
   it('has unique, ascending ids starting at 1', () => {
@@ -21,9 +22,31 @@ describe('Journey level content', () => {
     }
   });
 
-  it('covers the first seven lands, through wave 2 (Mistvale Marsh, Emberpeak)', () => {
+  it('covers the first nine lands, through wave 2 (up to Frostglass Tundra)', () => {
     const lands = new Set(LEVELS.map((l) => l.land));
-    for (const land of LANDS.slice(0, 7)) expect(lands.has(land.id), land.name).toBe(true);
+    for (const land of LANDS.slice(0, 9)) expect(lands.has(land.id), land.name).toBe(true);
+  });
+
+  it('keeps shaped-box walls inside the board, clear of obstacles, with room to drop', () => {
+    const W = PHYSICS.boardWidthPx;
+    const H = PHYSICS.boardHeightPx;
+    for (const l of LEVELS) {
+      for (const w of l.walls ?? []) {
+        expect(w.x, l.name).toBeGreaterThanOrEqual(0);
+        expect(w.y, l.name).toBeGreaterThanOrEqual(0);
+        expect(w.x + w.width, l.name).toBeLessThanOrEqual(W);
+        expect(w.y + w.height, l.name).toBeLessThanOrEqual(H);
+        for (const o of l.obstacles ?? []) {
+          const r = o.type === 'rock' ? PHYSICS.rockRadiusPx : tierRadiusPx(o.tier);
+          const dx = Math.max(w.x - o.x, 0, o.x - (w.x + w.width));
+          const dy = Math.max(w.y - o.y, 0, o.y - (w.y + w.height));
+          expect(Math.hypot(dx, dy), `${l.name} obstacle clear of wall`).toBeGreaterThan(r);
+        }
+      }
+      // the biggest mote the bag can hand out must still fit between narrowed sides
+      const [lo, hi] = dropRange(tierRadiusPx(Math.max(...DROPPABLE_TIERS)), l.walls);
+      expect(hi - lo, `${l.name} drop range`).toBeGreaterThan(40);
+    }
   });
 
   it('keeps every Mistvale Marsh level foggy and fog out of the other lands so far', () => {
@@ -33,7 +56,12 @@ describe('Journey level content', () => {
   it('gives every land with levels a closing boss that asks for more than its opener', () => {
     const tierOf = (l: (typeof LEVELS)[number]) =>
       l.goals.find((g) => g.type === 'reachTier')?.tier ?? 0;
-    for (const land of ['thistledown-hills', 'copperleaf-orchard', 'emberpeak'] as const) {
+    for (const land of [
+      'thistledown-hills',
+      'copperleaf-orchard',
+      'emberpeak',
+      'cloudspire-isles',
+    ] as const) {
       const levels = LEVELS.filter((l) => l.land === land);
       expect(levels).toHaveLength(3);
       expect(tierOf(levels[2]!)).toBeGreaterThan(tierOf(levels[0]!));

@@ -132,12 +132,12 @@ goal types, obstacles and hazards the engine already supports.
 | 20  | Emberpeak          | Cold Forge          | Reach tier 7                     | 60 drops                              | A tight budget (built)              |
 | 21  | Emberpeak          | Ember Rain          | Score 700                        | 70 s, bag weighted to tiers 3–5       | Big drops, little room (built)      |
 | 22  | Emberpeak          | The Great Bellows   | Reach tier 8                     | 88 drops                              | **Boss** (built)                    |
-| 23  | Cloudspire Isles   | Two Islands         | Reach tier 6                     | a pillar splits the box — new code    | Shaped boxes                        |
-| 24  | Cloudspire Isles   | Narrow Bridge       | Make 4 tier-5 motes              | a narrowed box — new code             | Stacking in tight spaces            |
-| 25  | Cloudspire Isles   | Sky Harbour         | Reach tier 8                     | pillars + wind, 100 drops             | **Boss**                            |
-| 26  | Frostglass Tundra  | Ice Field           | Free 8 ice motes                 | none                                  | Chains of thaws                     |
-| 27  | Frostglass Tundra  | Glacier Gate        | Reach tier 7                     | 6 ice motes, 45 drops                 | Using ice as a floor                |
-| 28  | Frostglass Tundra  | The Frozen Heart    | Free 10 ice motes, some tier 5–6 | 90 drops                              | **Boss**                            |
+| 23  | Cloudspire Isles   | Two Islands         | Reach tier 6                     | a glass pillar splits the box         | Shaped boxes (built)                |
+| 24  | Cloudspire Isles   | Narrow Bridge       | Make 4 tier-5 motes              | a narrowed box, 34 drops              | Stacking in tight spaces (built)    |
+| 25  | Cloudspire Isles   | Sky Harbour         | Reach tier 8                     | 2 pillars + wind, 108 drops           | **Boss** (built)                    |
+| 26  | Frostglass Tundra  | Ice Field           | Free 8 ice motes                 | none                                  | Chains of thaws (built)             |
+| 27  | Frostglass Tundra  | Glacier Gate        | Reach tier 7                     | 6 ice motes, 32 drops                 | Using ice as a floor (built)        |
+| 28  | Frostglass Tundra  | The Frozen Heart    | Free 10 ice motes, some tier 5–6 | 26 drops                              | **Boss** (built)                    |
 | 29  | Neonoko City       | Opening Night       | Make a ×4 combo — new code       | none                                  | Combos on purpose                   |
 | 30  | Neonoko City       | Rush Hour           | Score 1,200                      | 90 s                                  | Speed and flourish                  |
 | 31  | Neonoko City       | Lantern Parade      | Two ×5 combos and reach tier 8   | 110 drops                             | **Boss**                            |
@@ -167,9 +167,9 @@ above as a starting point.
 | Mechanic                                                                | First used | What it needs                                                                                                                                       | Size   |
 | ----------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
 | **Fog** (no Next preview) — built                                       | Land 6     | Allow `previewCount: 0` in `LevelDef`; hide the Next pill; a short fog overlay over the hanging zone.                                               | Small  |
-| **Shaped boxes** (pillars, narrowed walls)                              | Land 8     | A `walls` list in `LevelDef`: extra static colliders built with the board's walls, drawn as glass. Must stay deterministic; add a determinism test. | Medium |
+| **Shaped boxes** (pillars, narrowed walls) — built                      | Land 8     | A `walls` list in `LevelDef`: extra static colliders built with the board's walls, drawn as glass. Must stay deterministic; add a determinism test. | Medium |
 | **Combo goal**                                                          | Land 10    | A `combo` goal type (reach a combo of N, optionally K times), read from `merge` events' `comboCount`.                                               | Small  |
-| **Land intro and act cards** — land arrival stories built for lands 6–7 | Land 1     | One card component with land art, two story lines and Wick's line; shown once per land and act.                                                     | Small  |
+| **Land intro and act cards** — land arrival stories built for lands 6–9 | Land 1     | One card component with land art, two story lines and Wick's line; shown once per land and act.                                                     | Small  |
 
 ### 2.5 Release waves
 

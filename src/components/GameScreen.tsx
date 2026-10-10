@@ -290,6 +290,7 @@ export function GameScreen(props: GameScreenProps) {
             frameArtUrl={artOverrides.frameArt[landId] ?? landFrameUrl(landId)}
             backgroundArtUrl={artOverrides.backgroundArt[landId] ?? landBackdropUrl(landId)}
             fog={level?.previewCount === 0}
+            walls={level?.walls}
             onReady={() => setStageReady(true)}
           />
         )}

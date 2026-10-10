@@ -85,4 +85,42 @@ export const LAND_STORIES: Partial<Record<LandId, LandStory>> = {
       },
     ],
   },
+  'cloudspire-isles': {
+    finishLabel: 'Rebuild the bridges',
+    panels: [
+      {
+        image: landStoryPanelUrl('cloudspire-isles', 1),
+        text: 'Above Emberpeak the path climbs into the sky. The Cloudspire Isles have drifted apart, and their bridges have faded to nothing.',
+      },
+      {
+        image: landStoryPanelUrl('cloudspire-isles', 2),
+        speaker: 'wick',
+        text: "Not much room up here! Glass pillars and narrow ledges split the space. Mind the edges, and build in the gaps you're given.",
+      },
+      {
+        image: landStoryPanelUrl('cloudspire-isles', 3),
+        speaker: 'wick',
+        text: 'This window shows the Skylight pouring its light into a ring of little lanterns. It looks like it wanted to give its light away…',
+      },
+    ],
+  },
+  'frostglass-tundra': {
+    finishLabel: 'Melt the ice',
+    panels: [
+      {
+        image: landStoryPanelUrl('frostglass-tundra', 1),
+        text: 'Further north, Frostglass Tundra lies frozen solid. Motes of light are locked inside the ice, glowing faintly, like stars under glass.',
+      },
+      {
+        image: landStoryPanelUrl('frostglass-tundra', 2),
+        speaker: 'wick',
+        text: 'So much ice, and so much light inside it! Make a merge right beside a frozen mote and the warmth will thaw it free.',
+      },
+      {
+        image: landStoryPanelUrl('frostglass-tundra', 3),
+        speaker: 'wick',
+        text: 'Look at these cracks. They run out to every land, just like the cracks in the Skylight. Maybe the breaking was a beginning, not an ending.',
+      },
+    ],
+  },
 };

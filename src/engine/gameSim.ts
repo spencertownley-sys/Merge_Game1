@@ -15,6 +15,7 @@ import {
 } from '../config/physics';
 import { APEX_BONUS_POINTS, COMBO, comboMultiplier, scoreForMerge } from '../config/scoring';
 import { APEX_TIER, TIER_COUNT, tierRadiusPx } from '../config/tiers';
+import { clampDropX } from './walls';
 import { SpawnBag } from './spawnBag';
 import {
   isMergeEligible,
@@ -138,7 +139,7 @@ export class GameSim {
     if (!this.canDrop()) return false;
     const tier = this.heldTier;
     const r = tierRadiusPx(tier);
-    const x = Math.min(Math.max(xPx, r), PHYSICS.boardWidthPx - r);
+    const x = clampDropX(xPx, r, this.level.walls);
     const ball = this.createBall({
       tier,
       kind: 'ball',
@@ -264,6 +265,17 @@ export class GameSim {
         .setFriction(this.tuning.frictionBallWall)
         // Min rule so ball–wall friction is exactly frictionBallWall (§2), not an average
         // with the ball's own coefficient.
+        .setFrictionCombineRule(R.CoefficientCombineRule.Min)
+        .setRestitutionCombineRule(R.CoefficientCombineRule.Min);
+      this.wallColliders.push(this.world.createCollider(desc));
+    }
+    // Shaped boxes (JOURNEY_PLAN.md §2.4): level blocks behave exactly like the board's walls.
+    // Built once, in level order, so the world stays deterministic.
+    for (const w of this.level.walls ?? []) {
+      const desc = R.ColliderDesc.cuboid(w.width / 2 / PX_PER_METER, w.height / 2 / PX_PER_METER)
+        .setTranslation((w.x + w.width / 2) / PX_PER_METER, (w.y + w.height / 2) / PX_PER_METER)
+        .setRestitution(this.tuning.restitutionBallWall)
+        .setFriction(this.tuning.frictionBallWall)
         .setFrictionCombineRule(R.CoefficientCombineRule.Min)
         .setRestitutionCombineRule(R.CoefficientCombineRule.Min);
       this.wallColliders.push(this.world.createCollider(desc));
