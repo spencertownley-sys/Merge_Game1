@@ -56,6 +56,16 @@ export type Obstacle =
   | { type: 'rock'; x: number; y: number; removable?: boolean }
   | { type: 'ice'; x: number; y: number; tier: number };
 
+/** A static glass block inside the box (JOURNEY_PLAN.md §2.4 "shaped boxes"), in board px
+ *  from its top-left corner. A pillar rises from the floor; a block touching a side wall and
+ *  reaching the drop rail narrows the box (and the range the player can drop in). */
+export interface WallBlock {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface WindHazard {
   everySec: number;
   durationSec: number;
@@ -83,6 +93,7 @@ export interface LevelDef {
   /** 0 = fog (JOURNEY_PLAN.md §2.4): the Next preview is hidden. */
   previewCount?: 0 | 1 | 2;
   obstacles?: Obstacle[];
+  walls?: WallBlock[];
   hazards?: { wind?: WindHazard };
   /** Journey levels may raise the merge contact requirement above the §5.1 default of 0. */
   mergeContactMs?: number;

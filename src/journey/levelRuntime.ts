@@ -51,6 +51,7 @@ export function toSimLevelConfig(level: LevelDef): SimLevelConfig {
   return {
     spawnBag: level.spawnBag,
     previewCount: level.previewCount,
+    walls: level.walls,
     obstacles: level.obstacles,
     wind: level.hazards?.wind,
     mergeContactMs: level.mergeContactMs,

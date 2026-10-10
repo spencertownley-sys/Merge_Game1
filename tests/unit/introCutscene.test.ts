@@ -103,7 +103,12 @@ describe('IntroCutscene', () => {
 
 describe('land arrival stories', () => {
   it('cover the wave 2 lands, have painted art on disk, and belong to lands with levels', () => {
-    expect(Object.keys(LAND_STORIES).sort()).toEqual(['emberpeak', 'mistvale-marsh']);
+    expect(Object.keys(LAND_STORIES).sort()).toEqual([
+      'cloudspire-isles',
+      'emberpeak',
+      'frostglass-tundra',
+      'mistvale-marsh',
+    ]);
     for (const [land, story] of Object.entries(LAND_STORIES)) {
       expect(story.panels.length, land).toBeGreaterThanOrEqual(2);
       expect(levelsForLand(land as never).length, land).toBeGreaterThan(0);

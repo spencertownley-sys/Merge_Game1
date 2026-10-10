@@ -1,4 +1,4 @@
-// Journey levels for the first seven lands, authored from the §10.5 design-intent table and
+// Journey levels for the first nine lands, authored from the §10.5 design-intent table and
 // mapped onto the story beats in ART_AND_STORY_DIRECTION.md §4.3. Further lands are content
 // to add over time — nothing here caps the count. Seeds are fixed per level so a level plays
 // the same drop sequence every attempt (fair retries).
@@ -303,6 +303,116 @@ const emberpeak: LevelDef[] = [
   },
 ];
 
+// Wave 2, part 2: lands 8 and 9. Cloudspire Isles brings shaped boxes (glass pillars and a
+// narrowed box, JOURNEY_PLAN.md §2.4); Frostglass Tundra is all ice. Balanced 2026-10-10 with
+// the simulated player over 40 attempts each: Two Islands 100%, Narrow Bridge ~75%, Sky
+// Harbour ~47%, Ice Field ~90%, Glacier Gate ~80%, The Frozen Heart ~42%.
+const cloudspire: LevelDef[] = [
+  {
+    id: 23,
+    land: 'cloudspire-isles',
+    name: 'Two Islands',
+    seed: 1823,
+    goals: [{ type: 'reachTier', tier: 6 }],
+    walls: [{ x: 188, y: 330, width: 24, height: 190 }],
+    stars: { two: { scoreAtLeast: 85 }, three: { scoreAtLeast: 100 } },
+    flavor: 'A glass pillar splits the island in two. Build on both sides and let them meet.',
+  },
+  {
+    id: 24,
+    land: 'cloudspire-isles',
+    name: 'Narrow Bridge',
+    seed: 1824,
+    goals: [{ type: 'mergeCount', tier: 5, count: 4 }],
+    dropLimit: 34,
+    walls: [
+      { x: 0, y: 0, width: 45, height: 520 },
+      { x: 355, y: 0, width: 45, height: 520 },
+    ],
+    stars: starsForDropBudget(34),
+    flavor:
+      'Not much room up here. Mind the edges, and make four Lantern Wisps to light the bridge.',
+  },
+  {
+    id: 25,
+    land: 'cloudspire-isles',
+    name: 'Sky Harbour',
+    seed: 1825,
+    goals: [{ type: 'reachTier', tier: 8 }],
+    dropLimit: 108,
+    walls: [
+      { x: 120, y: 380, width: 20, height: 140 },
+      { x: 260, y: 380, width: 20, height: 140 },
+    ],
+    hazards: { wind: { everySec: 7, durationSec: 2, force: 6 } },
+    stars: starsForDropBudget(108),
+    flavor: 'Mooring posts, sky winds and a long way down. Raise a Cloud Balloon over the harbour.',
+  },
+];
+
+const frostglass: LevelDef[] = [
+  {
+    id: 26,
+    land: 'frostglass-tundra',
+    name: 'Ice Field',
+    seed: 1926,
+    goals: [{ type: 'clearObstacle', obstacle: 'ice', count: 8 }],
+    obstacles: [
+      { type: 'ice', x: 26, y: 500, tier: 1 },
+      { type: 'ice', x: 74, y: 500, tier: 2 },
+      { type: 'ice', x: 122, y: 500, tier: 1 },
+      { type: 'ice', x: 170, y: 500, tier: 2 },
+      { type: 'ice', x: 230, y: 500, tier: 1 },
+      { type: 'ice', x: 278, y: 500, tier: 2 },
+      { type: 'ice', x: 326, y: 500, tier: 1 },
+      { type: 'ice', x: 374, y: 500, tier: 2 },
+    ],
+    stars: { two: { scoreAtLeast: 130 }, three: { scoreAtLeast: 240 } },
+    flavor: 'A whole field of frozen motes. One warm merge beside a row can free several at once.',
+  },
+  {
+    id: 27,
+    land: 'frostglass-tundra',
+    name: 'Glacier Gate',
+    seed: 1927,
+    goals: [{ type: 'reachTier', tier: 7 }],
+    dropLimit: 32,
+    obstacles: [
+      { type: 'ice', x: 33, y: 495, tier: 3 },
+      { type: 'ice', x: 99, y: 490, tier: 4 },
+      { type: 'ice', x: 167, y: 495, tier: 3 },
+      { type: 'ice', x: 233, y: 495, tier: 3 },
+      { type: 'ice', x: 301, y: 490, tier: 4 },
+      { type: 'ice', x: 367, y: 495, tier: 3 },
+    ],
+    stars: starsForDropBudget(32),
+    flavor: 'The ice makes a floor to build on, and every thawed mote is a head start.',
+  },
+  {
+    id: 28,
+    land: 'frostglass-tundra',
+    name: 'The Frozen Heart',
+    seed: 1928,
+    goals: [{ type: 'clearObstacle', obstacle: 'ice', count: 10 }],
+    dropLimit: 26,
+    obstacles: [
+      { type: 'ice', x: 40, y: 482, tier: 5 },
+      { type: 'ice', x: 102, y: 500, tier: 2 },
+      { type: 'ice', x: 200, y: 472, tier: 6 },
+      { type: 'ice', x: 298, y: 500, tier: 2 },
+      { type: 'ice', x: 360, y: 482, tier: 5 },
+      { type: 'ice', x: 40, y: 420, tier: 1 },
+      { type: 'ice', x: 120, y: 440, tier: 3 },
+      { type: 'ice', x: 200, y: 400, tier: 2 },
+      { type: 'ice', x: 280, y: 440, tier: 3 },
+      { type: 'ice', x: 360, y: 420, tier: 1 },
+    ],
+    stars: starsForDropBudget(26),
+    flavor:
+      'At the heart of the tundra, ten motes sleep in the ice, some of them huge. Wake them all.',
+  },
+];
+
 export const LEVELS: readonly LevelDef[] = [
   ...sunmeadow,
   ...driftmoor,
@@ -311,6 +421,8 @@ export const LEVELS: readonly LevelDef[] = [
   ...copperleaf,
   ...mistvale,
   ...emberpeak,
+  ...cloudspire,
+  ...frostglass,
 ];
 
 export function levelById(id: number): LevelDef | undefined {

@@ -70,6 +70,7 @@ export function PixiStage(props: PixiStageProps) {
           backgroundArtUrl: p.backgroundArtUrl,
           showFrame: p.showFrame,
           fog: p.fog,
+          walls: p.walls,
         });
         sceneRef.current = scene;
         const doResize = () => scene?.resize(host.clientWidth, host.clientHeight);
@@ -118,6 +119,7 @@ export function PixiStage(props: PixiStageProps) {
       backgroundArtUrl: props.backgroundArtUrl,
       showFrame: props.showFrame,
       fog: props.fog,
+      walls: props.walls,
     });
   }, [
     props.quality,
@@ -131,6 +133,7 @@ export function PixiStage(props: PixiStageProps) {
     props.frameArtUrl,
     props.backgroundArtUrl,
     props.fog,
+    props.walls,
     props.showFrame,
   ]);
 

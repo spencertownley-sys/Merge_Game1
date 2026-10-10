@@ -73,6 +73,38 @@ describe('GameSim determinism', () => {
 });
 
 describe('GameSim rules', () => {
+  it('shaped boxes: walls are solid, deterministic, and narrow the drop range', () => {
+    const walls = [
+      { x: 0, y: 0, width: 45, height: 520 },
+      { x: 355, y: 0, width: 45, height: 520 },
+      { x: 188, y: 330, width: 24, height: 190 },
+    ];
+    const run = () => {
+      const sim = new GameSim(RAPIER, { seed: 21, level: { walls } });
+      const xs: number[] = [];
+      for (let i = 0; i < 25; i++) {
+        sim.drop(i % 2 ? 0 : 400); // try to drop outside the narrowed box
+        for (let s = 0; s < 72; s++) sim.step();
+        for (const e of sim.takeEvents()) if (e.type === 'drop') xs.push(e.x);
+      }
+      const snap = sim.snapshot();
+      sim.destroy();
+      return { xs, snap };
+    };
+    const a = run();
+    const b = run();
+    expect(a.snap).toEqual(b.snap);
+    for (const x of a.xs) {
+      expect(x).toBeGreaterThan(45);
+      expect(x).toBeLessThan(355);
+    }
+    // nothing ever ends up inside a wall block
+    for (const ball of a.snap.balls) {
+      expect(ball.x - ball.radius).toBeGreaterThan(45 - 2);
+      expect(ball.x + ball.radius).toBeLessThan(355 + 2);
+    }
+  });
+
   it('fog (previewCount 0) hides the preview without changing the tier sequence', () => {
     const clear = new GameSim(RAPIER, { seed: 9 });
     const foggy = new GameSim(RAPIER, { seed: 9, level: { previewCount: 0 } });

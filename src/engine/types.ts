@@ -1,7 +1,7 @@
 // Shared worker <-> main message types. Every message crossing the worker boundary MUST be
 // one of these (CLAUDE.md conventions) — never post untyped objects.
 
-import type { Obstacle, WindHazard } from '../types';
+import type { Obstacle, WallBlock, WindHazard } from '../types';
 import type { BallKind } from './mergeResolver';
 import type { PhysicsTuning } from '../config/physics';
 
@@ -10,6 +10,7 @@ import type { PhysicsTuning } from '../config/physics';
 export interface SimLevelConfig {
   spawnBag?: [number, number, number, number, number];
   previewCount?: 0 | 1 | 2;
+  walls?: WallBlock[];
   obstacles?: Obstacle[];
   wind?: WindHazard;
   mergeContactMs?: number;
