@@ -7,7 +7,7 @@ import { PHYSICS } from '../config/physics';
 import { LAND_PALETTES } from './palette';
 import type { LandId } from '../types';
 
-/** Logical margins (board px) the frame adds around the 400×600 board. */
+/** Logical margins (board px) the frame adds around the board (PHYSICS.boardWidthPx × boardHeightPx). */
 export const FRAME = { side: 30, top: 34, bottom: 40 } as const;
 
 export const FRAME_W = PHYSICS.boardWidthPx + FRAME.side * 2;
