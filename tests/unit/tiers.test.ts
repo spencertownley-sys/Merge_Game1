@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { TIER_COUNT, TIERS, tierDef, tierRadiusPx } from '../../src/config/tiers';
 
-describe('tierRadiusPx — r(n) = 14 * 1.22^(n-1), against the rounded §3 table', () => {
+describe('tierRadiusPx — 14 × 1.264^(n−1) to tier 7, then × 1.17, against the rounded §3 table', () => {
   it.each([
     [1, 14],
-    [2, 17],
-    [3, 21],
-    [4, 25],
-    [5, 31],
-    [6, 38],
-    [7, 46],
-    [8, 56],
-    [9, 69],
-    [10, 84],
-    [11, 102],
+    [2, 18],
+    [3, 22],
+    [4, 28],
+    [5, 36],
+    [6, 45],
+    [7, 57],
+    [8, 67],
+    [9, 78],
+    [10, 91],
+    [11, 107],
   ])('tier %i -> ~%i px', (tier, roundedExpected) => {
     expect(Math.round(tierRadiusPx(tier))).toBe(roundedExpected);
   });

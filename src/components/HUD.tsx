@@ -1,8 +1,7 @@
-// Top strip: score, best, combo; bottom strip: next-ball preview (UI_UX_NOTES.md §3, §7).
-// The danger line itself is drawn on the canvas (boardScene.ts).
+// Header (score, best, next) and the merge-order tray (UI_UX_NOTES.md §3, §7), laid out after
+// the reference video. The danger line is the glass rim, drawn on the canvas (boardScene.ts).
 
 import type { ReactNode } from 'react';
-import { COMBO, comboMultiplier } from '../config/scoring';
 import { TIER_COUNT, tierDef } from '../config/tiers';
 import { tierName } from '../render/coreArt';
 import { useGameStore } from '../store/gameStore';
@@ -27,55 +26,49 @@ function TierChip({ tier, size = 36 }: { tier: number; size?: number }) {
   );
 }
 
+/** Header, in the reference layout: controls on the left, score and best in one pill in the
+ *  middle, and the next mote on the right. The held mote itself hangs above the glass rim on
+ *  the board, and combos show on the merged mote (boardScene.ts), so neither needs a chip here. */
 export function HUDTop({ children }: { children?: ReactNode }) {
   const score = useGameStore((s) => s.score);
   const best = useGameStore((s) => s.bestScore);
-  const combo = useGameStore((s) => s.comboCount);
   const warning = useGameStore((s) => s.warning);
-  const showCombo = combo >= COMBO.showTextAtCount;
-  return (
-    <div className="flex w-full items-center justify-between gap-3 px-4 pt-3 pb-1">
-      <div className="flex min-w-0 flex-col leading-tight">
-        <span className="text-xs font-semibold tracking-wide text-ink-soft uppercase">Score</span>
-        <span
-          className={`font-display text-3xl font-bold tabular-nums transition-colors ${warning ? 'text-coral' : 'text-ink'}`}
-          data-testid="score"
-        >
-          {score}
-        </span>
-        <span className="text-xs text-ink-soft tabular-nums">Best {Math.max(best, score)}</span>
-      </div>
-      <div className="flex-1 text-center" aria-live="polite">
-        {showCombo && (
-          <span
-            key={combo}
-            className="font-display animate-[pop_240ms_ease-out] text-2xl font-bold text-coral drop-shadow-sm"
-            data-testid="combo"
-          >
-            Combo ×{comboMultiplier(combo).toFixed(1)}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2">{children}</div>
-    </div>
-  );
-}
-
-export function HUDBottom() {
   const next = useGameStore((s) => s.nextTiers);
-  const held = useGameStore((s) => s.heldTier);
   return (
-    <div className="flex w-full items-center justify-center gap-4 px-4 py-2 text-sm text-ink-soft">
-      <span className="flex items-center gap-2">
-        <span className="font-semibold">Now</span>
-        <TierChip tier={held} />
-      </span>
-      <span className="flex items-center gap-2">
-        <span className="font-semibold">Next</span>
-        {next.map((t, i) => (
-          <TierChip key={i} tier={t} size={i === 0 ? 32 : 26} />
-        ))}
-      </span>
+    <div className="flex w-full items-center justify-between gap-2 px-3 pt-3 pb-2">
+      <div className="flex min-w-11 items-center gap-1">{children}</div>
+      <div
+        className="flex min-w-0 items-stretch rounded-2xl bg-ink/85 px-1 py-1 text-white shadow-md"
+        aria-live="polite"
+      >
+        <div className="flex min-w-16 flex-col items-center px-3 leading-tight">
+          <span className="text-[10px] font-semibold tracking-widest uppercase opacity-80">
+            Score
+          </span>
+          <span
+            className={`font-display text-xl font-bold tabular-nums transition-colors ${warning ? 'text-coral' : 'text-white'}`}
+            data-testid="score"
+          >
+            {score}
+          </span>
+        </div>
+        <span className="my-1 w-px bg-white/25" aria-hidden />
+        <div className="flex min-w-16 flex-col items-center px-3 leading-tight">
+          <span className="text-[10px] font-semibold tracking-widest text-gold uppercase">
+            Best
+          </span>
+          <span className="font-display text-xl font-bold text-gold tabular-nums">
+            {Math.max(best, score)}
+          </span>
+        </div>
+      </div>
+      <div
+        className="flex items-center gap-1.5 rounded-full bg-white/80 py-1 pr-3 pl-1 shadow-sm"
+        data-testid="next-pill"
+      >
+        <TierChip tier={next[0] ?? 0} size={30} />
+        <span className="text-xs font-bold text-ink-soft">Next</span>
+      </div>
     </div>
   );
 }
@@ -86,7 +79,7 @@ export function EvolutionStrip() {
   const top = useGameStore((s) => s.topTier);
   return (
     <div
-      className="flex w-full items-center justify-center gap-1 px-3 pb-2"
+      className="mx-3 mb-2 flex items-center justify-center gap-1 rounded-full bg-white/70 px-2 py-1.5 shadow-sm"
       aria-label="Merge order"
     >
       {Array.from({ length: TIER_COUNT }, (_, i) => i + 1).map((t) => (

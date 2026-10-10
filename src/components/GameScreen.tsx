@@ -14,7 +14,8 @@ import { runRepository } from '../persistence/RunRepository';
 import { LevelRuntime, toSimLevelConfig, type LevelStatus } from '../journey/levelRuntime';
 import { LEVELS } from '../journey/levels';
 import { tierName } from '../render/coreArt';
-import { EvolutionStrip, HUDBottom, HUDTop } from './HUD';
+import { EvolutionStrip, HUDTop } from './HUD';
+import { DEFAULT_LAND, LAND_PALETTES } from '../render/palette';
 import { PauseOverlay } from './PauseOverlay';
 import { ResultsScreen } from './ResultsScreen';
 import { SettingsPanel } from './SettingsPanel';
@@ -205,8 +206,15 @@ export function GameScreen(props: GameScreenProps) {
   };
   const won = levelStatus?.outcome === 'won';
 
+  // The whole screen takes the land's colours, so the space around the letterboxed board
+  // reads as part of the scene (the reference fills its screen with one warm backdrop).
+  const palette = LAND_PALETTES[level?.land ?? DEFAULT_LAND] ?? LAND_PALETTES[DEFAULT_LAND];
+  const sky = level && !landRestoredNow ? palette.dim : palette;
   return (
-    <div className="relative flex h-full w-full flex-col">
+    <div
+      className="relative flex h-full w-full flex-col"
+      style={{ background: `linear-gradient(180deg, ${sky.skyTop} 0%, ${sky.skyBottom} 100%)` }}
+    >
       <HUDTop>
         <button
           type="button"
@@ -284,7 +292,6 @@ export function GameScreen(props: GameScreenProps) {
           </div>
         )}
       </div>
-      <HUDBottom />
       <EvolutionStrip />
 
       {paused && !runEnded && !showSettings && (

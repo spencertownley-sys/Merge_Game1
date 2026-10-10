@@ -143,8 +143,8 @@ describe('GameSim rules', () => {
       level: {
         spawnBag: [20, 0, 0, 0, 0],
         obstacles: [
-          { type: 'ice', x: 200, y: 560, tier: 1 },
-          { type: 'rock', x: 60, y: 560 },
+          { type: 'ice', x: 200, y: 480, tier: 1 },
+          { type: 'rock', x: 60, y: 480 },
         ],
       },
     });

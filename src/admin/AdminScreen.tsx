@@ -273,9 +273,10 @@ export function AdminScreen() {
                   ))}
                 </div>
                 <p className="mt-2 text-xs text-ink-soft">
-                  “Fruit Merge feel” is the closest to classic fruit-merge handling: quicker drops,
-                  livelier rolling and bouncing, jigglier landings. Every slider below applies live
-                  and is saved automatically.
+                  “Reference match” is the default, measured frame by frame from the reference
+                  video: a steady fall, a small hop on landing, and a long roll. “Original Smoosh”
+                  brings back the September feel. Every slider below applies live and is saved
+                  automatically.
                 </p>
               </div>
               {PHYSICS_FIELDS.map((g) => (
@@ -395,7 +396,7 @@ export function AdminScreen() {
               className="btn-ghost"
               onClick={() => {
                 resetAll();
-                toast('Reset to design-doc defaults.');
+                toast('Reset to the reference-matched defaults.');
               }}
             >
               Reset everything

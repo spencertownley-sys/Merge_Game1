@@ -3,8 +3,10 @@ import { IDBFactory } from 'fake-indexeddb';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   DEFAULT_GAME_TUNING,
+  DEFAULT_VISUAL,
   PHYSICS_FIELDS,
   TUNING_PRESETS,
+  TUNING_VERSION,
   VISUAL_FIELDS,
   applyPreset,
   normalizeTuning,
@@ -14,9 +16,11 @@ import { resetDBForTests } from '../../src/persistence/db';
 import { tuningRepository } from '../../src/persistence/TuningRepository';
 
 describe('tuning model', () => {
-  it('design-doc preset equals the canonical physics defaults', () => {
-    const p = TUNING_PRESETS.find((x) => x.id === 'design-doc')!;
+  it('the default preset is the reference match and equals the canonical physics defaults', () => {
+    const p = TUNING_PRESETS.find((x) => x.id === 'reference')!;
+    expect(DEFAULT_GAME_TUNING.presetId).toBe('reference');
     expect(p.physics).toEqual(DEFAULT_TUNING);
+    expect(p.visual).toEqual(DEFAULT_VISUAL);
     expect(DEFAULT_GAME_TUNING.physics).toEqual(DEFAULT_TUNING);
   });
 
@@ -37,6 +41,7 @@ describe('tuning model', () => {
 
   it('normalizeTuning clamps, fills defaults and drops unsafe art URLs', () => {
     const t = normalizeTuning({
+      version: TUNING_VERSION,
       physics: { gravity: 999, frictionBallBall: -1 },
       visual: { squashAmplitudeX: 'nope' },
       artStyle: 'bogus',
@@ -48,7 +53,7 @@ describe('tuning model', () => {
     expect(t.physics.gravity).toBe(40);
     expect(t.physics.frictionBallBall).toBe(0);
     expect(t.physics.restitutionBallBall).toBe(DEFAULT_TUNING.restitutionBallBall);
-    expect(t.visual.squashAmplitudeX).toBe(0.22);
+    expect(t.visual.squashAmplitudeX).toBe(DEFAULT_VISUAL.squashAmplitudeX);
     expect(t.artStyle).toBe('gummy');
     expect(t.art.tierArt).toEqual({ 1: 'https://example.com/a.png' });
     expect(t.art.frameArt).toEqual({ whisperwood: 'data:image/png;base64,AAAA' });
@@ -59,10 +64,26 @@ describe('tuning model', () => {
       ...DEFAULT_GAME_TUNING,
       art: { tierArt: { 3: 'https://x/y.png' }, frameArt: {}, backgroundArt: {} },
     };
-    const t = applyPreset(base, 'fruit-merge');
-    expect(t.presetId).toBe('fruit-merge');
-    expect(t.physics.gravity).toBe(22);
+    const t = applyPreset(base, 'original');
+    expect(t.presetId).toBe('original');
+    expect(t.physics.gravity).toBe(14);
     expect(t.art.tierArt[3]).toBe('https://x/y.png');
+  });
+
+  it('feel saved under older defaults gives way to the new defaults but keeps art', () => {
+    const t = normalizeTuning({
+      physics: { gravity: 22 },
+      visual: { squashAmplitudeX: 0.3 },
+      artStyle: 'watercolor',
+      art: { tierArt: { 2: 'https://x/two.png' } },
+      presetId: 'fruit-merge',
+    });
+    expect(t.version).toBe(TUNING_VERSION);
+    expect(t.physics).toEqual(DEFAULT_TUNING);
+    expect(t.visual).toEqual(DEFAULT_VISUAL);
+    expect(t.presetId).toBe('reference');
+    expect(t.artStyle).toBe('watercolor');
+    expect(t.art.tierArt[2]).toBe('https://x/two.png');
   });
 });
 

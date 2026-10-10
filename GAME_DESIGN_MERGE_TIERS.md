@@ -18,48 +18,52 @@ Smoosh's twist is that **the skin on each ball can be a photo of a real person, 
 
 ## 2. Board & Physics
 
-Logical units are pixels on a fixed 400 × 600 board. The renderer scales this to the screen. Physics runs at 100 px = 1 m.
+> ⚠️ Revised 2026-10-10: the board shape, physics values and tier sizes below were re-measured from a reference video of a commercial fruit-merge game, at the owner's request, frame by frame (positions tracked at 60 fps and converted to box widths). Only motion and proportions were taken from it: fall time, bounce, roll, box shape and size steps. Every name, character, word and piece of art in Smoosh stays original (see the IP note in `CLAUDE.md`). The September values live on as the "Original Smoosh" preset in the admin screen.
 
-| Parameter                          | Value                           | Notes                                                         |
-| ---------------------------------- | ------------------------------- | ------------------------------------------------------------- |
-| Board (inner)                      | 400 × 600 px                    | Aspect 2:3. Letterbox on other aspect ratios.                 |
-| Wall thickness                     | 40 px (outside the board)       | Static colliders. Thick to prevent tunnelling.                |
-| Drop rail Y                        | 44 px from top                  | Ball spawns here, centered on pointer X.                      |
-| Danger line Y                      | 110 px from top                 | Dashed line, always visible.                                  |
-| Gravity                            | 14 m/s² down                    | Starting value. Tune by feel.                                 |
-| Ball shape                         | Circle, exact sphere silhouette |                                                               |
-| Density                            | 1.0                             | Mass scales with area.                                        |
-| Restitution (ball–ball, ball–wall) | 0.12                            | Low bounce.                                                   |
-| Friction (ball–ball)               | 0.35                            |                                                               |
-| Friction (ball–wall)               | 0.20                            |                                                               |
-| Linear damping                     | 0.15                            |                                                               |
-| Angular damping                    | 0.40                            |                                                               |
-| Max speed clamp                    | 14 m/s                          | Prevents tunnelling. CCD also on.                             |
-| Fixed timestep                     | 1/120 s                         | Two physics steps per 60 fps frame. Required for determinism. |
-| Drop cooldown                      | 450 ms                          | Between releases.                                             |
-| Max live balls                     | ~80 (soft budget)               | Board area makes this hard to exceed.                         |
+Logical units are pixels on a fixed 400 × 520 board. The renderer scales this to the screen. Physics runs at 100 px = 1 m.
 
-> ⚠️ Assumption: all physics values are starting points. Expose them in `config/physics.ts` and a dev-only tuning panel.
+| Parameter                          | Value                           | Notes                                                                                       |
+| ---------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
+| Board (inner)                      | 400 × 520 px                    | A 78 px hanging zone above a 400 × 442 glass box (aspect ≈ 0.9). Letterbox on other ratios. |
+| Wall thickness                     | 40 px (outside the board)       | Static colliders. Thick to prevent tunnelling.                                              |
+| Drop rail Y                        | 40 px from top                  | The held ball hangs here, above the rim, centered on pointer X. Clears tier 5's radius.     |
+| Danger line Y                      | 78 px from top                  | The glass box's rim. Always visible as the rim itself.                                      |
+| Gravity                            | 7.8 m/s² down                   | Measured: constant 1.94 box-widths/s², no visible drag. Full-height fall ≈ 1.08 s.          |
+| Ball shape                         | Circle, exact sphere silhouette |                                                                                             |
+| Density                            | 1.0                             | Mass scales with area.                                                                      |
+| Restitution (ball–ball, ball–wall) | 0.30                            | A landing hops ≈ 8% of its drop height. Walls combine with Min, so move both together.      |
+| Friction (ball–ball)               | 0.45                            |                                                                                             |
+| Friction (ball–wall)               | 0.40                            |                                                                                             |
+| Linear damping                     | 0.02                            | Next to no air drag.                                                                        |
+| Angular damping                    | 0.90                            | Rolling speed fades ≈ 30% per second on a flat floor, so motes roll for seconds.            |
+| Max speed clamp                    | 12 m/s                          | Above a full-height fall's top speed (≈ 8.5 m/s). Prevents tunnelling. CCD also on.         |
+| Fixed timestep                     | 1/120 s                         | Two physics steps per 60 fps frame. Required for determinism.                               |
+| Drop cooldown                      | 300 ms                          | The next ball is in hand ≈ 0.25 s after a release.                                          |
+| Max live balls                     | ~80 (soft budget)               | Board area makes this hard to exceed.                                                       |
+
+`tests/determinism/referenceFeel.test.ts` keeps the defaults honest: fall time, hop height and rolling fade must stay inside the measured ranges.
+
+> ⚠️ Assumption: all physics values stay tunable. Expose them in `config/physics.ts` and the admin tuning screen.
 
 ---
 
 ## 3. Tier Table
 
-11 tiers. Radius formula: **`r(n) = 14 × 1.22^(n−1)` px**. Always compute it from the formula. The rounded values below are for reading only.
+11 tiers. Radius formula (revised 2026-10-10): **`r(n) = 14 × 1.264^(n−1)` px for n ≤ 7, then `r(7) × 1.17^(n−7)`**. Tiers 1-7 follow the measured size steps; the reference never showed tiers 8-11, so they grow more slowly to keep the apex about half the box wide and reachable. Always compute it from the formula. The rounded values below are for reading only.
 
 | Tier | Default skin (placeholder art) | Radius px (rounded) | Diameter as % of board width | Rim color                    | Rim style | Bake texture size |
 | ---- | ------------------------------ | ------------------- | ---------------------------- | ---------------------------- | --------- | ----------------- |
 | 1    | Pebble                         | 14                  | 7.0%                         | `#F25F5C`                    | solid     | 128               |
-| 2    | Seashell                       | 17                  | 8.5%                         | `#FF9F1C`                    | solid     | 128               |
-| 3    | Coin                           | 21                  | 10.4%                        | `#FFD23F`                    | solid     | 128               |
-| 4    | Marble                         | 25                  | 12.7%                        | `#9BD770`                    | solid     | 128               |
-| 5    | Lantern                        | 31                  | 15.5%                        | `#2EC4B6`                    | dashed    | 256               |
-| 6    | Beach Ball                     | 38                  | 18.9%                        | `#3AA6F0`                    | dashed    | 256               |
-| 7    | Snow Globe                     | 46                  | 23.1%                        | `#5B6CFF`                    | dashed    | 256               |
-| 8    | Balloon                        | 56                  | 28.2%                        | `#9B5DE5`                    | dashed    | 256               |
-| 9    | Moon                           | 69                  | 34.4%                        | `#F15BB5`                    | double    | 512               |
-| 10   | Sun                            | 84                  | 41.9%                        | `#E07A5F`                    | double    | 512               |
-| 11   | Globe (apex)                   | 102                 | 51.1%                        | `#FFD700` (animated shimmer) | double    | 512               |
+| 2    | Seashell                       | 18                  | 8.8%                         | `#FF9F1C`                    | solid     | 128               |
+| 3    | Coin                           | 22                  | 11.2%                        | `#FFD23F`                    | solid     | 128               |
+| 4    | Marble                         | 28                  | 14.1%                        | `#9BD770`                    | solid     | 128               |
+| 5    | Lantern                        | 36                  | 17.9%                        | `#2EC4B6`                    | dashed    | 256               |
+| 6    | Beach Ball                     | 45                  | 22.6%                        | `#3AA6F0`                    | dashed    | 256               |
+| 7    | Snow Globe                     | 57                  | 28.5%                        | `#5B6CFF`                    | dashed    | 256               |
+| 8    | Balloon                        | 67                  | 33.4%                        | `#9B5DE5`                    | dashed    | 256               |
+| 9    | Moon                           | 78                  | 39.1%                        | `#F15BB5`                    | double    | 512               |
+| 10   | Sun                            | 91                  | 45.7%                        | `#E07A5F`                    | double    | 512               |
+| 11   | Globe (apex)                   | 107                 | 53.5%                        | `#FFD700` (animated shimmer) | double    | 512               |
 
 Rim style exists so tiers are readable without color (color-blind support). An optional "show tier numbers" setting draws a small numeral badge.
 

@@ -47,9 +47,27 @@ export interface VisualTuning {
   wobbleMaxDeg: number;
   /** Max gaze toward the pointer (degrees). */
   gazeMaxDeg: number;
+  /** The held mote's periodic "ready" stretch while it waits above the rim (0 = still). */
+  heldPulse: number;
 }
 
+/** Revised 2026-10-10 to match the reference video: landings show at most a faint squash,
+ *  and the waiting mote stretches about 12% taller in a slow pulse. */
 export const DEFAULT_VISUAL: VisualTuning = {
+  squashAmplitudeX: 0.08,
+  squashAmplitudeY: 0.1,
+  squashDurationMs: 200,
+  jiggleCycles: 1,
+  impactThresholdMps: 3,
+  idleJiggle: 0,
+  visualSpinScale: 0.8,
+  wobbleMaxDeg: 6,
+  gazeMaxDeg: 20,
+  heldPulse: 0.12,
+};
+
+/** The September defaults (design doc §9.4 before the 2026-10-10 reference revision). */
+const ORIGINAL_VISUAL: VisualTuning = {
   squashAmplitudeX: 0.22,
   squashAmplitudeY: 0.3,
   squashDurationMs: 220,
@@ -59,6 +77,7 @@ export const DEFAULT_VISUAL: VisualTuning = {
   visualSpinScale: 0.6,
   wobbleMaxDeg: 8,
   gazeMaxDeg: 20,
+  heldPulse: 0,
 };
 
 export interface ArtOverrides {
@@ -77,14 +96,22 @@ export interface GameTuning {
   art: ArtOverrides;
   /** Name of the preset this was last reset to, for the admin UI. */
   presetId: string;
+  /** Bumped when the defaults change shape (TUNING_VERSION); older saved feel is replaced. */
+  version: number;
 }
+
+/** 2 = the reference-matched defaults (2026-10-10). Saved tuning from an older version keeps
+ *  its art overrides but takes the new physics and visual defaults, because the board and
+ *  tier sizes changed under it. */
+export const TUNING_VERSION = 2;
 
 export const DEFAULT_GAME_TUNING: GameTuning = {
   physics: { ...DEFAULT_TUNING },
   visual: { ...DEFAULT_VISUAL },
   artStyle: 'gummy',
   art: { tierArt: {}, frameArt: {}, backgroundArt: {} },
-  presetId: 'design-doc',
+  presetId: 'reference',
+  version: TUNING_VERSION,
 };
 
 export interface TuningPreset {
@@ -95,43 +122,33 @@ export interface TuningPreset {
   visual: VisualTuning;
 }
 
-/** Feel presets. "Fruit Merge feel" approximates the snappier, bouncier, jigglier handling of
- *  classic fruit-merge games: faster fall, more roll, a little more bounce, bigger squash. */
+/** Feel presets. "Reference match" is the default: measured frame by frame from the reference
+ *  video (fall time, bounce height, rolling decay; see game design §2). */
 export const TUNING_PRESETS: readonly TuningPreset[] = [
   {
-    id: 'design-doc',
-    name: 'Design doc defaults',
-    blurb: 'The canonical §2 / §9.4 numbers.',
+    id: 'reference',
+    name: 'Reference match',
+    blurb: 'Measured from the reference video: steady fall, small hop, long roll.',
     physics: { ...DEFAULT_TUNING },
     visual: { ...DEFAULT_VISUAL },
   },
   {
-    id: 'fruit-merge',
-    name: 'Fruit Merge feel',
-    blurb: 'Faster fall, livelier roll and bounce, jiggly landings.',
+    id: 'original',
+    name: 'Original Smoosh',
+    blurb: 'The September numbers: quicker fall, softer bounce, jiggly landings.',
     physics: {
       ...DEFAULT_TUNING,
-      gravity: 22,
-      restitutionBallBall: 0.22,
-      restitutionBallWall: 0.18,
-      frictionBallBall: 0.45,
-      frictionBallWall: 0.3,
-      linearDamping: 0.05,
-      angularDamping: 0.15,
-      maxSpeedClamp: 18,
-      dropCooldownMs: 350,
+      gravity: 14,
+      restitutionBallBall: 0.12,
+      restitutionBallWall: 0.12,
+      frictionBallBall: 0.35,
+      frictionBallWall: 0.2,
+      linearDamping: 0.15,
+      angularDamping: 0.4,
+      maxSpeedClamp: 14,
+      dropCooldownMs: 450,
     },
-    visual: {
-      ...DEFAULT_VISUAL,
-      squashAmplitudeX: 0.3,
-      squashAmplitudeY: 0.38,
-      squashDurationMs: 320,
-      jiggleCycles: 2.5,
-      impactThresholdMps: 1.8,
-      idleJiggle: 0.015,
-      visualSpinScale: 0.8,
-      wobbleMaxDeg: 10,
-    },
+    visual: { ...ORIGINAL_VISUAL },
   },
   {
     id: 'floaty',
@@ -139,7 +156,7 @@ export const TUNING_PRESETS: readonly TuningPreset[] = [
     blurb: 'Slow, dreamy fall with soft landings.',
     physics: {
       ...DEFAULT_TUNING,
-      gravity: 8,
+      gravity: 5,
       linearDamping: 0.3,
       angularDamping: 0.6,
       restitutionBallBall: 0.08,
@@ -153,10 +170,10 @@ export const TUNING_PRESETS: readonly TuningPreset[] = [
     blurb: 'Rubbery motes that spring off each other.',
     physics: {
       ...DEFAULT_TUNING,
-      gravity: 18,
-      restitutionBallBall: 0.45,
-      restitutionBallWall: 0.4,
-      angularDamping: 0.2,
+      gravity: 12,
+      restitutionBallBall: 0.5,
+      restitutionBallWall: 0.5,
+      angularDamping: 0.3,
     },
     visual: {
       ...DEFAULT_VISUAL,
@@ -320,6 +337,14 @@ export const VISUAL_FIELDS: { group: string; fields: TuningField<keyof VisualTun
         max: 0.08,
         step: 0.001,
       },
+      {
+        key: 'heldPulse',
+        label: 'Waiting bounce',
+        hint: 'How much the held mote stretches while it waits above the rim.',
+        min: 0,
+        max: 0.3,
+        step: 0.01,
+      },
     ],
   },
   {
@@ -372,14 +397,27 @@ export function normalizeTuning(input: unknown): GameTuning {
     physics?: Partial<PhysicsTuning>;
     visual?: Partial<VisualTuning>;
   };
+  // Feel saved under older defaults was tuned for a different board and tier sizes, so it
+  // gives way to the current defaults; art choices carry over either way.
+  const current = raw.version === TUNING_VERSION;
   const physics = { ...DEFAULT_TUNING } as PhysicsTuning;
   for (const group of PHYSICS_FIELDS)
     for (const f of group.fields)
-      physics[f.key] = clampNum(raw.physics?.[f.key], f.min, f.max, DEFAULT_TUNING[f.key]);
+      physics[f.key] = clampNum(
+        current ? raw.physics?.[f.key] : undefined,
+        f.min,
+        f.max,
+        DEFAULT_TUNING[f.key],
+      );
   const visual = { ...DEFAULT_VISUAL } as VisualTuning;
   for (const group of VISUAL_FIELDS)
     for (const f of group.fields)
-      visual[f.key] = clampNum(raw.visual?.[f.key], f.min, f.max, DEFAULT_VISUAL[f.key]);
+      visual[f.key] = clampNum(
+        current ? raw.visual?.[f.key] : undefined,
+        f.min,
+        f.max,
+        DEFAULT_VISUAL[f.key],
+      );
   const artStyle: ArtStyleId = ART_STYLES.some((s) => s.id === raw.artStyle)
     ? (raw.artStyle as ArtStyleId)
     : 'gummy';
@@ -397,8 +435,12 @@ export function normalizeTuning(input: unknown): GameTuning {
     const u = sanitizeUrl(v);
     if (u) art.backgroundArt[k as LandId] = u;
   }
-  const presetId = typeof raw.presetId === 'string' ? raw.presetId : 'custom';
-  return { physics, visual, artStyle, art, presetId };
+  const presetId = !current
+    ? DEFAULT_GAME_TUNING.presetId
+    : typeof raw.presetId === 'string'
+      ? raw.presetId
+      : 'custom';
+  return { physics, visual, artStyle, art, presetId, version: TUNING_VERSION };
 }
 
 export function applyPreset(tuning: GameTuning, presetId: string): GameTuning {

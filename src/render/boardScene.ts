@@ -1,7 +1,10 @@
-// The Pixi scene for the 400×600 board: per-land frame, background, danger line, ghost guide,
-// held-ball preview, and one BallView per live ball. Consumes worker snapshots/events and runs
-// every render-only animation (§5.3 pop + coin-flip, §9.2 gaze/settle/spin, §9.2b squash,
-// tier-11 halo) using the admin-tunable VisualTuning. Nothing here feeds back into physics.
+// The Pixi scene for the board: per-land frame and backdrop, the glass box whose rim is the
+// danger line, the dotted drop guide, the held ball hanging above the rim, and one BallView per
+// live ball. Consumes worker snapshots/events and runs every render-only animation (§5.3 pop +
+// coin-flip, merge bursts, combo badges, §9.2 gaze/settle/spin, §9.2b squash, the held ball's
+// waiting pulse, tier-11 halo) using the admin-tunable VisualTuning. Layout and effects follow
+// the reference video (game design §2, revised 2026-10-10); all art and words are Smoosh's own.
+// Nothing here feeds back into physics.
 
 import {
   Assets,
@@ -9,11 +12,13 @@ import {
   FillGradient,
   Graphics,
   Sprite,
+  Text,
   Texture,
   type Application,
 } from 'pixi.js';
 import { PHYSICS } from '../config/physics';
-import { APEX_TIER, tierRadiusPx } from '../config/tiers';
+import { APEX_TIER, tierDef, tierRadiusPx } from '../config/tiers';
+import { mulberry32 } from '../engine/rng';
 import { DEFAULT_VISUAL, type ArtStyleId, type VisualTuning } from '../config/tuning';
 import type { BallSnapshot, SimEvent, Snapshot } from '../engine/types';
 import { BallView, type GraphicsQuality } from './ballView';
@@ -70,8 +75,51 @@ interface DyingBall {
   startMs: number;
 }
 
+/** A render-only effect; `tick` returns false once it is finished and destroyed. */
+interface Effect {
+  tick(nowMs: number): boolean;
+}
+
 const BOARD_W = PHYSICS.boardWidthPx;
 const BOARD_H = PHYSICS.boardHeightPx;
+/** The glass box's front rim, which is also the danger line (§7). */
+const RIM_Y = PHYSICS.dangerLineYPx;
+/** How far the back edge of the box's opening sits above and inside the front rim. */
+const RIM_DEPTH = 16;
+const RIM_INSET = 14;
+
+const DISPLAY_FONT = "'Fredoka', 'Baloo 2', 'Nunito', system-ui, sans-serif";
+
+/** Praise for a chain of merges, in Smoosh's own words (light gathering in a storybook sky). */
+export function praiseFor(comboCount: number, apex: boolean): string | null {
+  if (apex) return 'Luminous!';
+  if (comboCount >= 6) return 'Dazzling!';
+  if (comboCount === 5) return 'Radiant!';
+  if (comboCount === 4) return 'Glowing!';
+  if (comboCount === 3) return 'Bright!';
+  return null;
+}
+
+/** The held ball's waiting pulse: a quick stretch, then back, every 720 ms (0..1). */
+export function heldPulseEnvelope(clockMs: number): number {
+  const t = clockMs % 720;
+  if (t < 170) return Math.sin((t / 170) * (Math.PI / 2));
+  if (t < 300) return Math.cos(((t - 170) / 130) * (Math.PI / 2));
+  return 0;
+}
+
+/** Where a ball of radius r dropped at x first comes to rest against the pile (centre y). */
+export function landingCenterY(x: number, r: number, balls: readonly BallSnapshot[]): number {
+  let y = BOARD_H - r;
+  for (const b of balls) {
+    const reach = b.radius + r;
+    const dx = Math.abs(b.x - x);
+    if (dx >= reach) continue;
+    const top = b.y - Math.sqrt(reach * reach - dx * dx);
+    if (top < y) y = top;
+  }
+  return y;
+}
 
 export class BoardScene {
   readonly root = new Container();
@@ -79,11 +127,14 @@ export class BoardScene {
   private readonly frame = new LandFrame();
   private readonly bg = new Graphics();
   private readonly bgImageHolder = new Container();
+  private readonly glass = new Graphics();
   private readonly frameEdge = new Graphics();
   private readonly dangerLine = new Graphics();
   private readonly ghost = new Graphics();
   private readonly ballLayer = new Container();
   private readonly fxLayer = new Container();
+  private readonly textLayer = new Container();
+  private readonly effects: Effect[] = [];
   private readonly balls = new Map<number, LiveBall>();
   private readonly dying: DyingBall[] = [];
   private heldView: BallView | null = null;
@@ -115,10 +166,12 @@ export class BoardScene {
     boardContent.addChild(
       this.bg,
       this.bgImageHolder,
+      this.glass,
       this.ghost,
       this.ballLayer,
       this.fxLayer,
       this.dangerLine,
+      this.textLayer,
     );
     this.boardLayer.addChild(this.frame.container, boardContent, boardMask, this.frameEdge);
     setArtStyle(opts.artStyle ?? 'gummy');
@@ -126,6 +179,7 @@ export class BoardScene {
     this.artGen = artGeneration();
     this.applyLook();
     this.drawFrameEdge();
+    this.drawGlass();
     this.drawDangerLine(false, 1);
     app.stage.addChild(this.root);
   }
@@ -146,7 +200,9 @@ export class BoardScene {
     const fh = this.frameVisible ? FRAME_H : BOARD_H;
     this.scale = Math.min(width / fw, height / fh);
     const left = (width - fw * this.scale) / 2;
-    const top = (height - fh * this.scale) / 2;
+    // Spare height goes mostly above the box, so the merge-order tray sits close under it as in
+    // the reference layout.
+    const top = (height - fh * this.scale) * 0.72;
     this.root.scale.set(this.scale);
     this.root.position.set(left, top);
     this.boardLayer.position.set(
@@ -265,17 +321,53 @@ export class BoardScene {
     g.rect(0, 0, BOARD_W, BOARD_H).stroke({ width: 4, color: '#ffffff', alpha: 0.3 });
   }
 
+  /** The glass box: a translucent body below the rim, the back edge of its opening drawn in
+   *  perspective above the rim, and soft highlights down the walls. Drawn behind the balls. */
+  private drawGlass(): void {
+    const g = this.glass;
+    g.clear();
+    const backY = RIM_Y - RIM_DEPTH;
+    // the opening seen from slightly above: back edge, and the two side edges down to the rim
+    g.poly([0, RIM_Y, RIM_INSET, backY, BOARD_W - RIM_INSET, backY, BOARD_W, RIM_Y]).fill({
+      color: '#ffffff',
+      alpha: 0.14,
+    });
+    g.moveTo(0, RIM_Y)
+      .lineTo(RIM_INSET, backY)
+      .lineTo(BOARD_W - RIM_INSET, backY)
+      .lineTo(BOARD_W, RIM_Y)
+      .stroke({ width: 2, color: '#ffffff', alpha: 0.55, join: 'round' });
+    // the body of the box
+    g.rect(0, RIM_Y, BOARD_W, BOARD_H - RIM_Y).fill({ color: '#ffffff', alpha: 0.16 });
+    g.rect(RIM_INSET, RIM_Y, BOARD_W - RIM_INSET * 2, BOARD_H - RIM_Y).fill({
+      color: '#ffffff',
+      alpha: 0.06,
+    });
+    // light catching the walls and floor
+    g.rect(5, RIM_Y + 8, 5, BOARD_H - RIM_Y - 16).fill({ color: '#ffffff', alpha: 0.35 });
+    g.rect(BOARD_W - 10, RIM_Y + 8, 3, BOARD_H - RIM_Y - 16).fill({
+      color: '#ffffff',
+      alpha: 0.22,
+    });
+    g.rect(0, BOARD_H - 6, BOARD_W, 6).fill({ color: '#ffffff', alpha: 0.3 });
+  }
+
+  /** The front rim of the glass box doubles as the danger line (§7): always visible, and it
+   *  pulses red while the pile is over it. */
   private drawDangerLine(warning: boolean, pulse: number): void {
     const g = this.dangerLine;
     g.clear();
-    const y = PHYSICS.dangerLineYPx;
-    const dash = 10;
-    const gap = 8;
-    const color = warning ? '#e0473f' : '#7a6a80';
-    const alpha = warning ? 0.55 + 0.45 * pulse : 0.45;
-    for (let x = 6; x < BOARD_W - 6; x += dash + gap)
-      g.moveTo(x, y).lineTo(Math.min(x + dash, BOARD_W - 6), y);
-    g.stroke({ width: warning ? 3 : 2, color, alpha, cap: 'round' });
+    g.moveTo(0, RIM_Y + 2)
+      .lineTo(BOARD_W, RIM_Y + 2)
+      .stroke({ width: 3, color: '#7a5a48', alpha: 0.12 });
+    g.moveTo(0, RIM_Y)
+      .lineTo(BOARD_W, RIM_Y)
+      .stroke({
+        width: warning ? 4 : 3,
+        color: warning ? '#e0473f' : '#ffffff',
+        alpha: warning ? 0.55 + 0.45 * pulse : 0.85,
+        cap: 'round',
+      });
   }
 
   // --- input ------------------------------------------------------------------------------
@@ -308,7 +400,12 @@ export class BoardScene {
           this.dying.push({ view: b.view, startMs: this.clockMs });
         }
         if (e.type === 'merge') this.pendingPops.add(e.resultId);
-        this.spawnMergeBurst(e.x, e.y, e.type === 'apex' ? APEX_TIER : e.tier);
+        const tier = e.type === 'apex' ? APEX_TIER : e.tier;
+        this.spawnMergeBurst(e.x, e.y, tier, e.atMs);
+        if (e.type === 'merge' && e.comboCount >= 2)
+          this.spawnComboBadge(e.resultId, e.x, e.y, e.comboCount);
+        const praise = praiseFor(e.type === 'merge' ? e.comboCount : 0, e.type === 'apex');
+        if (praise) this.spawnPraise(praise);
         break;
       }
       case 'impact': {
@@ -330,26 +427,142 @@ export class BoardScene {
     }
   }
 
-  private spawnMergeBurst(x: number, y: number, tier: number): void {
+  /** A puff of the new tier's colour where the pair met, opening into a ring of droplets that
+   *  fly out and fade, while the merged ball pops in at its centre. */
+  private spawnMergeBurst(x: number, y: number, tier: number, atMs: number): void {
     if (this.opts.reduceMotion) return;
-    const g = new Graphics();
+    const color = tierDef(Math.min(tier, APEX_TIER)).rimColor;
     const r = tierRadiusPx(Math.min(tier, APEX_TIER));
-    g.circle(0, 0, r * 0.6).fill({ color: '#ffffff', alpha: 0.6 });
-    g.position.set(x, y);
-    this.fxLayer.addChild(g);
+    // render-only scatter, seeded so a replay looks the same (never Math.random, §4)
+    const rand = mulberry32((Math.round(x * 31 + y * 17) ^ (atMs | 0) ^ (tier << 20)) >>> 0);
+    const container = new Container();
+    container.position.set(x, y);
+    this.fxLayer.addChild(container);
+    const puffs: { g: Graphics; angle: number; dist: number; size: number }[] = [];
+    const count = 12;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + rand() * 0.5;
+      const size = r * (0.28 + rand() * 0.18);
+      const g = new Graphics().circle(0, 0, size).fill({ color });
+      container.addChild(g);
+      puffs.push({ g, angle, dist: r * (0.15 + rand() * 0.3), size });
+    }
+    const drops: { g: Graphics; angle: number; speed: number }[] = [];
+    for (let i = 0; i < 10; i++) {
+      const g = new Graphics().circle(0, 0, 2 + rand() * 3).fill({ color });
+      container.addChild(g);
+      drops.push({ g, angle: rand() * Math.PI * 2, speed: r * (1.6 + rand() * 1.2) });
+    }
     const start = this.clockMs;
-    const dur = 260;
-    const tick = () => {
-      const t = (this.clockMs - start) / dur;
-      if (t >= 1) {
-        this.app.ticker.remove(tick);
-        g.destroy();
-        return;
-      }
-      g.scale.set(1 + t * 1.6);
-      g.alpha = 0.6 * (1 - t);
-    };
-    this.app.ticker.add(tick);
+    const puffMs = 140;
+    const totalMs = 620;
+    this.effects.push({
+      tick: (now) => {
+        const t = now - start;
+        if (t >= totalMs) {
+          container.destroy({ children: true });
+          return false;
+        }
+        const grow = Math.min(1, t / puffMs);
+        const open = Math.max(0, (t - puffMs) / (totalMs - puffMs)); // 0..1 after the puff
+        const ease = 1 - (1 - open) * (1 - open);
+        for (const p of puffs) {
+          const d = p.dist + r * 1.1 * ease;
+          p.g.position.set(Math.cos(p.angle) * d, Math.sin(p.angle) * d);
+          p.g.scale.set((0.4 + 0.6 * grow) * (1 - 0.75 * ease));
+          p.g.alpha = 1 - open;
+        }
+        for (const dr of drops) {
+          const d = dr.speed * ease;
+          dr.g.position.set(Math.cos(dr.angle) * d, Math.sin(dr.angle) * d);
+          dr.g.alpha = open > 0 ? 1 - open : 0;
+        }
+        return true;
+      },
+    });
+  }
+
+  /** "×n" on the merged ball for a chain of merges; it rides along with the ball, then fades. */
+  private spawnComboBadge(resultId: number, x: number, y: number, comboCount: number): void {
+    const label = new Text({
+      text: `×${comboCount}`,
+      style: {
+        fontFamily: DISPLAY_FONT,
+        fontSize: 32,
+        fontWeight: '800',
+        fill: '#ffffff',
+        stroke: { color: '#5b2433', width: 7, join: 'round' },
+      },
+    });
+    label.anchor.set(0.5);
+    label.position.set(x, y);
+    this.textLayer.addChild(label);
+    const start = this.clockMs;
+    const holdMs = 1000;
+    const fadeMs = 300;
+    const reduce = this.opts.reduceMotion;
+    this.effects.push({
+      tick: (now) => {
+        const t = now - start;
+        if (t >= holdMs + fadeMs) {
+          label.destroy();
+          return false;
+        }
+        const ball = this.snapshot?.balls.find((b) => b.id === resultId);
+        if (ball) label.position.set(ball.x, ball.y);
+        const pop = reduce
+          ? 1
+          : t < 160
+            ? 0.6 + 0.6 * Math.sin((t / 160) * Math.PI * 0.5)
+            : 1.2 - Math.min(0.2, (t - 160) / 600);
+        label.scale.set(pop);
+        label.alpha = t > holdMs ? 1 - (t - holdMs) / fadeMs : 1;
+        return true;
+      },
+    });
+  }
+
+  /** A praise word that zooms in over the box, overshoots, settles, then fades. */
+  private spawnPraise(word: string): void {
+    for (const c of [...this.textLayer.children]) if (c.label === 'praise') c.destroy();
+    const label = new Text({
+      text: word,
+      style: {
+        fontFamily: DISPLAY_FONT,
+        fontSize: 46,
+        fontWeight: '800',
+        fill: '#ffd166',
+        stroke: { color: '#b0413e', width: 8, join: 'round' },
+        dropShadow: { color: '#7a2f3a', alpha: 0.35, blur: 2, distance: 3, angle: Math.PI / 2 },
+      },
+    });
+    label.label = 'praise';
+    label.anchor.set(0.5);
+    label.position.set(BOARD_W / 2, RIM_Y + (BOARD_H - RIM_Y) * 0.22);
+    this.textLayer.addChild(label);
+    const start = this.clockMs;
+    const inMs = 260;
+    const holdMs = 900;
+    const fadeMs = 280;
+    const reduce = this.opts.reduceMotion;
+    this.effects.push({
+      tick: (now) => {
+        const t = now - start;
+        if (label.destroyed) return false;
+        if (t >= inMs + holdMs + fadeMs) {
+          label.destroy();
+          return false;
+        }
+        let k = 1;
+        if (!reduce && t < inMs) {
+          const u = t / inMs; // 1.9 → 0.92 → 1: zoom in with a small overshoot
+          k = u < 0.7 ? 1.9 - (0.98 * u) / 0.7 : 0.92 + (0.08 * (u - 0.7)) / 0.3;
+        }
+        label.scale.set(k);
+        label.alpha = t > inMs + holdMs ? 1 - (t - inMs - holdMs) / fadeMs : Math.min(1, t / 80);
+        return true;
+      },
+    });
   }
 
   // --- per-frame --------------------------------------------------------------------------
@@ -357,6 +570,8 @@ export class BoardScene {
   /** Called from the Pixi ticker. dtMs is render time, never physics time. */
   update(dtMs: number): void {
     this.clockMs += dtMs;
+    for (let i = this.effects.length - 1; i >= 0; i--)
+      if (!this.effects[i].tick(this.clockMs)) this.effects.splice(i, 1);
     if (artGeneration() !== this.artGen) this.rebuildViews(); // custom art finished loading / style changed
     const snap = this.snapshot;
     if (!snap) return;
@@ -497,9 +712,13 @@ export class BoardScene {
     if (!this.heldView) return;
     const r = this.heldView.radius;
     const x = Math.min(Math.max(this.heldX, r), BOARD_W - r);
-    this.heldView.setTransform(x, PHYSICS.dropRailYPx, 0);
+    // the waiting pulse stretches the held ball downward from its top (reference video)
+    const reduce = this.opts.reduceMotion;
+    const amp = reduce ? 0 : this.visual.heldPulse * heldPulseEnvelope(this.clockMs);
+    this.heldView.setTransform(x, PHYSICS.dropRailYPx + r * amp, 0);
+    this.heldView.setSquash(1 - amp * 0.35, 1 + amp);
     this.heldView.container.alpha = snap.canDrop ? 1 : 0.6;
-    if (!this.opts.reduceMotion) {
+    if (!reduce) {
       const g = computeGaze(
         { x, y: PHYSICS.dropRailYPx, pointer: this.pointer, vxPx: 0, vyPx: 0 },
         this.visual,
@@ -507,16 +726,15 @@ export class BoardScene {
       this.heldView.setOrientation(buildRotationMatrix(0, g.yaw, g.pitch));
     }
     if (this.ghostVisible) {
-      const dash = 8;
-      const gap = 8;
-      const top = PHYSICS.dropRailYPx + r;
-      for (let y = top; y < BOARD_H - 4; y += dash + gap)
-        this.ghost.moveTo(x, y).lineTo(x, Math.min(y + dash, BOARD_H - 4));
-      this.ghost.stroke({ width: 2, color: '#ffffff', alpha: 0.55, cap: 'round' });
-      this.ghost
-        .moveTo(x - r, PHYSICS.dropRailYPx)
-        .lineTo(x + r, PHYSICS.dropRailYPx)
-        .stroke({ width: 1, color: '#ffffff', alpha: 0.3 });
+      // dotted guide in the held tier's colour, from under the ball to where it will land
+      const color = tierDef(this.heldTier).rimColor;
+      const top = PHYSICS.dropRailYPx + r + 10;
+      const end = landingCenterY(x, r, snap.balls);
+      const spacing = 13;
+      for (let y = top; y < end; y += spacing) {
+        const fade = 1 - Math.max(0, (y - (end - 60)) / 60);
+        this.ghost.circle(x, y, 2.6).fill({ color, alpha: 0.85 * fade });
+      }
     }
   }
 
