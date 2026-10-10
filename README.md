@@ -4,7 +4,21 @@ A physics merge game (Suika/Fruit-Merge genre) set in a fully fictional pastel-w
 fantasy world. Players drop light motes — rendered as translucent, glossy gummy-candy orbs — that
 merge into bigger, brighter tiers, restoring color to a series of story "lands" on a Journey map.
 
-## Start here
+## Play
+
+**▶ [Play in your browser](https://spencertownley-sys.github.io/Merge_Game1/)**. It works on phones
+and desktops, and you can install it to your home screen ("Add to Home Screen" / "Install app")
+to play offline.
+
+- **How to play:** drag along the top of the glass box to aim, then let go to drop the waiting
+  mote. Two matching motes that touch merge into the next, brighter tier. Chain merges for combos.
+  The run ends if the pile stays above the box's rim for too long.
+- **Classic** is an endless high-score run. **Journey** is the story mode: short levels with goals
+  that bring colour back to each land.
+- **Private by design:** there are no accounts, ads or tracking. Scores, progress and settings
+  are saved only on your device.
+
+## Start here (for developers)
 
 Read these in order before touching any code — they're the canonical source of truth, not this
 README:
