@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { BRAND_NAME } from '../config/brand';
+import { ADMIN_ENABLED } from '../config/flags';
 import { runRepository } from '../persistence/RunRepository';
 import { newRunSeed, useUi } from '../store/uiStore';
 import { TierChip } from './HUD';
@@ -37,7 +38,7 @@ export function HomeScreen() {
             // Hidden admin entry: tap the title five times.
             const n = titleTaps + 1;
             setTitleTaps(n);
-            if (n >= 5) {
+            if (ADMIN_ENABLED && n >= 5) {
               setTitleTaps(0);
               navigate({ name: 'admin' });
             }

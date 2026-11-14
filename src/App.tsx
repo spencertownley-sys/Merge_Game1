@@ -20,6 +20,7 @@ const JourneyMap = lazy(() =>
   import('./journey/JourneyMap').then((m) => ({ default: m.JourneyMap })),
 );
 import { useGameStore } from './store/gameStore';
+import { ADMIN_ENABLED } from './config/flags';
 import type { SimLevelConfig } from './engine/types';
 import type { LandId } from './types';
 
@@ -74,7 +75,7 @@ function Router({ debugSim, tuningPanel }: { debugSim?: SimLevelConfig; tuningPa
     case 'settings':
       return <SettingsPanel onClose={() => navigate(screen.from)} />;
     case 'admin':
-      return <AdminScreen />;
+      return ADMIN_ENABLED ? <AdminScreen /> : <HomeScreen />;
   }
 }
 
@@ -120,9 +121,18 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const story = params.get('story');
-    if (params.get('admin') === '1') navigate({ name: 'admin' });
+    if (ADMIN_ENABLED && params.get('admin') === '1') navigate({ name: 'admin' });
     else if (story === '1') navigate({ name: 'journey', story: true });
     else if (story && story in LAND_STORIES) navigate({ name: 'journey', story: story as LandId });
+  }, [navigate]);
+  // The cookie notice links to #privacy, which is the Privacy section of Settings.
+  useEffect(() => {
+    const openPrivacy = () => {
+      if (location.hash === '#privacy') navigate({ name: 'settings', from: { name: 'home' } });
+    };
+    openPrivacy();
+    window.addEventListener('hashchange', openPrivacy);
+    return () => window.removeEventListener('hashchange', openPrivacy);
   }, [navigate]);
   const [debug] = useState(() =>
     DEBUG_HOOKS ? new URLSearchParams(location.search).get('debug') : null,
