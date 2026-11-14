@@ -2,7 +2,7 @@
 // and pointer input (drag along the rail, release to drop). Everything gameplay-related is
 // read from the SimClient's frames; this component never touches physics state directly.
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Application } from 'pixi.js';
 import { BoardScene, type BoardSceneOptions } from './boardScene';
 import { preloadCoreTextures } from './artStyles';
@@ -19,7 +19,15 @@ export interface PixiStageProps extends BoardSceneOptions {
   className?: string;
 }
 
+/** Board pixels per arrow-key press (Shift moves three times as far). */
+const KEY_STEP_PX = 12;
+const KEY_HELP = 'Left and right arrow keys move the drop guide. Space or Enter drops the mote.';
+const KEY_HELP_VISIBLE =
+  'pointer-events-none absolute inset-x-0 bottom-2 mx-auto w-fit max-w-[90%] rounded-full bg-white/90 px-3 py-1 text-center text-xs text-ink-soft';
+
 export function PixiStage(props: PixiStageProps) {
+  const helpId = useId();
+  const [focused, setFocused] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<BoardScene | null>(null);
   const propsRef = useRef(props);
@@ -188,12 +196,45 @@ export function PixiStage(props: PixiStageProps) {
     const onLeave = () => {
       if (!dragging) sceneRef.current?.setPointer(null);
     };
+    // Keyboard play (WCAG 2.1.1): arrows steer the drop guide, Space or Enter drops.
+    let keyX = PHYSICS.boardWidthPx / 2;
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (!propsRef.current.interactive || ev.altKey || ev.ctrlKey || ev.metaKey) return;
+      const step = ev.shiftKey ? KEY_STEP_PX * 3 : KEY_STEP_PX;
+      if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
+        ev.preventDefault();
+        keyX = Math.min(
+          PHYSICS.boardWidthPx,
+          Math.max(0, keyX + (ev.key === 'ArrowLeft' ? -step : step)),
+        );
+        sceneRef.current?.setHeld(keyX, true);
+      } else if (ev.key === ' ' || ev.key === 'Enter') {
+        ev.preventDefault();
+        if (ev.repeat) return;
+        sceneRef.current?.setHeld(keyX, true);
+        propsRef.current.onDrop(keyX);
+      }
+    };
+    const onFocus = () => {
+      setFocused(true);
+      sceneRef.current?.setHeld(keyX, true);
+    };
+    const onBlur = () => {
+      setFocused(false);
+      if (!dragging) sceneRef.current?.setHeld(keyX, false);
+    };
+    host.addEventListener('keydown', onKeyDown);
+    host.addEventListener('focus', onFocus);
+    host.addEventListener('blur', onBlur);
     host.addEventListener('pointerdown', onDown);
     host.addEventListener('pointermove', onMove);
     host.addEventListener('pointerup', onUp);
     host.addEventListener('pointercancel', onUp);
     host.addEventListener('pointerleave', onLeave);
     return () => {
+      host.removeEventListener('keydown', onKeyDown);
+      host.removeEventListener('focus', onFocus);
+      host.removeEventListener('blur', onBlur);
       host.removeEventListener('pointerdown', onDown);
       host.removeEventListener('pointermove', onMove);
       host.removeEventListener('pointerup', onUp);
@@ -202,5 +243,19 @@ export function PixiStage(props: PixiStageProps) {
     };
   }, []);
 
-  return <div ref={hostRef} className={props.className ?? 'h-full w-full'} />;
+  return (
+    <>
+      <div
+        ref={hostRef}
+        className={`${props.className ?? 'h-full w-full'} focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-gold/70`}
+        tabIndex={0}
+        role="application"
+        aria-label="Game board"
+        aria-describedby={helpId}
+      />
+      <p id={helpId} className={focused ? KEY_HELP_VISIBLE : 'sr-only'}>
+        {KEY_HELP}
+      </p>
+    </>
+  );
 }
