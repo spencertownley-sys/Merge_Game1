@@ -15,13 +15,33 @@ const DESCRIPTION =
 /** Absolute URL of the deployed game (set by the deploy workflow), for link previews. */
 const publicUrl = process.env.VITE_PUBLIC_URL;
 
+/** GitHub Pages cannot send response headers, so the Content-Security-Policy ships as a <meta>
+ *  tag (frame-ancestors cannot be set this way). wasm-unsafe-eval is for Rapier's WebAssembly;
+ *  unsafe-eval is for PixiJS v8's generated uniform-sync functions; style-src allows the inline
+ *  styles PixiJS and React set. Injected at build time only so the dev server's inline HMR
+ *  script still runs. */
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'",
+  "worker-src 'self' blob:",
+  "img-src 'self' data: blob:",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "connect-src 'self' data: blob:",
+  "manifest-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
 /** Writes the real title, a description and link-preview tags into index.html at build time, so
  *  a shared link shows the game's name and icon instead of "Loading…". */
 function shareMeta(): Plugin {
   return {
     name: 'share-meta',
-    transformIndexHtml(html) {
+    transformIndexHtml(html, ctx) {
       const tags = [
+        ...(ctx.server ? [] : [`<meta http-equiv="Content-Security-Policy" content="${CSP}" />`]),
         `<meta name="description" content="${DESCRIPTION}" />`,
         '<meta property="og:type" content="website" />',
         `<meta property="og:title" content="${BRAND_NAME}" />`,
@@ -63,10 +83,10 @@ export default defineConfig({
         start_url: base,
         scope: base,
         icons: [
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
           {
-            src: '/icons/icon-512-maskable.png',
+            src: 'icons/icon-512-maskable.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',

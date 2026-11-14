@@ -99,3 +99,12 @@ body {
 .wick-bob {
   animation: wick-bob 3.2s ease-in-out infinite;
 }
+
+/* Cookie notice (public/cookie-banner.css): brand theme. The kit's own files stay unmodified. */
+.cb {
+  --cb-bg: #fff7f2;
+  --cb-fg: #3b2f4a;
+  --cb-accent: #7c5cbf;
+  --cb-accent-fg: #ffffff;
+  --cb-radius: 16px;
+}

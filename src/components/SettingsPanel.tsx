@@ -1,6 +1,7 @@
 // Settings (UI_UX_NOTES.md §3): single-column toggles grouped under Audio, Motion & Graphics,
 // Accessibility. All toggles apply immediately; no save step.
 
+import { BRAND_NAME } from '../config/brand';
 import { useSettings } from '../store/settingsStore';
 import type { Settings } from '../types';
 
@@ -14,6 +15,18 @@ interface ToggleProps {
   hint?: string;
   disabled?: boolean;
 }
+
+const CREDITS: readonly [string, string][] = [
+  [
+    'Art',
+    '[PLACEHOLDER: owner to state the art source and licence for the painted art in public/assets]',
+  ],
+  ['PixiJS', 'MIT licence'],
+  ['Rapier physics', 'Apache-2.0 licence'],
+  ['React and Zustand', 'MIT licence'],
+  ['Tailwind CSS', 'MIT licence'],
+  ['idb', 'ISC licence'],
+];
 
 function Toggle({ id, label, hint, disabled }: ToggleProps) {
   const value = useSettings((s) => s[id]);
@@ -35,7 +48,7 @@ function Toggle({ id, label, hint, disabled }: ToggleProps) {
         checked={value}
         disabled={disabled}
         onChange={(e) => set(id, e.target.checked)}
-        className="h-7 w-12 cursor-pointer appearance-none rounded-full bg-ink/20 transition checked:bg-coral before:block before:h-6 before:w-6 before:translate-x-0.5 before:translate-y-0.5 before:rounded-full before:bg-white before:shadow before:transition checked:before:translate-x-5.5 focus-visible:ring-4 focus-visible:ring-gold/60 focus-visible:outline-none"
+        className="h-11 w-[4.5rem] shrink-0 cursor-pointer appearance-none rounded-full bg-ink/20 transition checked:bg-coral before:block before:h-9 before:w-9 before:translate-x-1 before:translate-y-1 before:rounded-full before:bg-white before:shadow before:transition checked:before:translate-x-8 focus-visible:ring-4 focus-visible:ring-gold/60 focus-visible:outline-none"
       />
     </label>
   );
@@ -62,8 +75,6 @@ export function SettingsPanel({ onClose, overlay }: SettingsPanelProps) {
       </div>
       <h3 className="mt-2 px-4 text-xs font-bold tracking-wide text-ink-soft uppercase">Audio</h3>
       <Toggle id="sound" label="Sound effects" />
-      <Toggle id="music" label="Music" hint="Coming soon" disabled />
-      <Toggle id="haptics" label="Haptics" hint="Coming to mobile" disabled />
       <h3 className="mt-2 px-4 text-xs font-bold tracking-wide text-ink-soft uppercase">
         Motion & graphics
       </h3>
@@ -81,6 +92,35 @@ export function SettingsPanel({ onClose, overlay }: SettingsPanelProps) {
         label="Show tier numbers"
         hint="Rim styles always mark tiers without colour"
       />
+      <h3
+        id="privacy"
+        className="mt-2 px-4 text-xs font-bold tracking-wide text-ink-soft uppercase"
+      >
+        Privacy
+      </h3>
+      <div className="flex flex-col gap-3 px-4 text-sm text-ink-soft">
+        <p>
+          {BRAND_NAME} has no accounts and no tracking. Your games, story progress and settings are
+          saved only in this browser (IndexedDB) and are never sent anywhere. Clearing this site's
+          data in your browser settings deletes them.
+        </p>
+        <p>
+          The game also keeps its own files in this browser so it can play offline. Server logs at
+          the host (GitHub Pages) may record your IP address, as for any website.
+        </p>
+        <p>[PLACEHOLDER: owner legal name and a contact email for privacy requests]</p>
+        <button type="button" className="btn-ghost self-start" data-cookie-settings>
+          Cookie settings
+        </button>
+      </div>
+      <h3 className="mt-2 px-4 text-xs font-bold tracking-wide text-ink-soft uppercase">Credits</h3>
+      <ul className="flex flex-col gap-1 px-4 text-sm text-ink-soft">
+        {CREDITS.map(([name, note]) => (
+          <li key={name}>
+            <span className="font-semibold text-ink">{name}</span>: {note}
+          </li>
+        ))}
+      </ul>
     </div>
   );
   if (overlay) {
