@@ -1,6 +1,7 @@
 // Settings (UI_UX_NOTES.md §3): single-column toggles grouped under Audio, Motion & Graphics,
 // Accessibility. All toggles apply immediately; no save step.
 
+import { BRAND_NAME } from '../config/brand';
 import { useSettings } from '../store/settingsStore';
 import type { Settings } from '../types';
 
@@ -99,9 +100,9 @@ export function SettingsPanel({ onClose, overlay }: SettingsPanelProps) {
       </h3>
       <div className="flex flex-col gap-3 px-4 text-sm text-ink-soft">
         <p>
-          Smoosh has no accounts and no tracking. Your games, story progress and settings are saved
-          only in this browser (IndexedDB) and are never sent anywhere. Clearing this site's data in
-          your browser settings deletes them.
+          {BRAND_NAME} has no accounts and no tracking. Your games, story progress and settings are
+          saved only in this browser (IndexedDB) and are never sent anywhere. Clearing this site's
+          data in your browser settings deletes them.
         </p>
         <p>
           The game also keeps its own files in this browser so it can play offline. Server logs at
